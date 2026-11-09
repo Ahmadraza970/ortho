@@ -383,13 +383,61 @@ function botSay(text, delay = 300) {
   return new Promise((res) => setTimeout(() => {
     const div = document.createElement('div');
     div.className = 'msg bot'; div.innerHTML = renderBotHTML(text);
-    chatLog.appendChild(div); scrollChat(); res();
+    // Asal text data attribute me rakha hai — chatHistoryForAI isi ko padhegi,
+    // taaki bubble ke andar ke feedback buttons (👍/👎) history me na ghusein.
+    div.dataset.rawText = String(text ?? '');
+    chatLog.appendChild(div);
+    addFeedbackRow(div);
+    scrollChat(); res();
   }, delay));
 }
 function meSay(text) {
   const div = document.createElement('div');
   div.className = 'msg me'; div.textContent = text;
   chatLog.appendChild(div); scrollChat();
+}
+
+/* ---------- FEEDBACK (👍/👎 — improvement loop) ----------
+   Har bot jawab ke neeche chhote 👍 👎 buttons. Login ho to Supabase `feedback`
+   table me insert hota hai (rating 1 / -1 + jawab ka asal text, 500 chars tak) —
+   Zara ise dashboard se padh kar brain/knowledge sudharegi.
+   Table abhi apply na hui ho to insert fail hoga: buttons chup-chaap wapas aa
+   jayenge taaki user phir try kar sake; raw error kabhi nahi dikhta. */
+function addFeedbackRow(div) {
+  const row = document.createElement('div');
+  row.className = 'fbrow';
+  const up = document.createElement('button');
+  up.type = 'button'; up.className = 'fbbtn'; up.textContent = '👍';
+  up.setAttribute('aria-label', 'Jawab achha laga');
+  const down = document.createElement('button');
+  down.type = 'button'; down.className = 'fbbtn'; down.textContent = '👎';
+  down.setAttribute('aria-label', 'Jawab theek nahi laga');
+  up.addEventListener('click', () => submitFeedback(div, row, 1));
+  down.addEventListener('click', () => submitFeedback(div, row, -1));
+  row.append(up, down);
+  div.appendChild(row);
+}
+
+async function submitFeedback(div, row, rating) {
+  if (!currentUser) {
+    await botSay('Feedback ke liye pehle login karna hoga 🌿 Login ke baad tumhara 👍/👎 meri sudhaar wali list me jud jayega.');
+    showLoginCard();
+    return;
+  }
+  const btns = row.querySelectorAll('.fbbtn');
+  btns.forEach((b) => { b.disabled = true; });
+  row.classList.add('sending');
+  const { error } = await supabase.from('feedback').insert({
+    user_id: currentUser.id,
+    rating,
+    message_text: (div.dataset.rawText || '').slice(0, 500)
+  });
+  row.classList.remove('sending');
+  if (error) {
+    btns.forEach((b) => { b.disabled = false; });
+    return;
+  }
+  row.innerHTML = '<span class="fbthanks">Dhanyavaad 🙏</span>';
 }
 function scrollChat() { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }
 function setChips(items, onPick, asGrid = false) {
@@ -525,7 +573,9 @@ const MED_INFO_RE = /(dawai|dwaai|dvaai|dawa|dava|tablet|goli|medicine|capsule|s
 function chatHistoryForAI() {
   return [...chatLog.children]
     .filter((el) => el.classList.contains('msg') && !el.classList.contains('typing'))
-    .map((el) => ({ role: el.classList.contains('me') ? 'user' : 'assistant', content: el.textContent.trim() }))
+    // Bot bubbles ke liye dataset.rawText (botSay me set) — warna .fbrow ke 👍/👎
+    // aur "Dhanyavaad" text history me ghus jata. User bubbles par dataset nahi hai.
+    .map((el) => ({ role: el.classList.contains('me') ? 'user' : 'assistant', content: (el.dataset.rawText ?? el.textContent).trim() }))
     .filter((m) => m.content.length > 0)
     .slice(-10)
     .map((m) => ({ role: m.role, content: m.content.slice(0, 2000) }));
