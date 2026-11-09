@@ -655,7 +655,8 @@ $('#chatPhoto').addEventListener('change', async (e) => {
     if (res.error) failed = true; else data = res.data;
   } catch { failed = true; }
   typing.remove();
-  if (!failed && data && typeof data.medicine_name === 'string' && data.medicine_name.trim()) {
+  // Guard: naam kam se kam 3 characters ka ho — "S" jaisa tukda confirm prompt me kabhi nahi jayega
+  if (!failed && data && typeof data.medicine_name === 'string' && data.medicine_name.trim().length >= 3) {
     const name = data.medicine_name.trim();
     pendingPhoto = { stage: 'confirm', name };
     await botSay(`Photo me dawai ka naam ye padha maine: "${name}". Kya yehi dawai hai? 'Haan' ya 'Nahi' likho.`);
