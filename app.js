@@ -364,7 +364,7 @@ $('#pushBtn').addEventListener('click', async () => {
   } catch { msg(out, 'Kuch gadbad hui — thodi der baad phir try karo.', true); }
 });
 
-/* ================= CHAT (guided check-in, rule-based) ================= */
+/* ================= CHAT (guided check-in + local intents + AI brain) ================= */
 const chatLog = $('#chatLog');
 const chatChips = $('#chatChips');
 let chatState = 'idle';
@@ -499,6 +499,33 @@ function nextFallback() {
   if (i === lastFallback) i = (i + 1) % FALLBACKS.length;
   lastFallback = i;
   return FALLBACKS[i];
+}
+
+/* AI brain — local intent na mile to ortho-chat Edge Function (sirf logged-in user ke liye).
+   Function ka contract: body { messages: [{ role, content }] } -> { reply, model }.
+   Kuch bhi fail ho (net slow, timeout, function error) to chup-chaap local fallback chalega —
+   user ko raw error kabhi nahi dikhega. */
+function chatHistoryForAI() {
+  return [...chatLog.children]
+    .filter((el) => el.classList.contains('msg') && !el.classList.contains('typing'))
+    .map((el) => ({ role: el.classList.contains('me') ? 'user' : 'assistant', content: el.textContent.trim() }))
+    .filter((m) => m.content.length > 0)
+    .slice(-10)
+    .map((m) => ({ role: m.role, content: m.content.slice(0, 2000) }));
+}
+function showTyping() {
+  const div = document.createElement('div');
+  div.className = 'msg bot typing';
+  div.textContent = 'Ortho soch raha hai…';
+  chatLog.appendChild(div); scrollChat();
+  return div;
+}
+async function askOrthoBrain() {
+  const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 30000));
+  const call = supabase.functions.invoke('ortho-chat', { body: { messages: chatHistoryForAI() } });
+  const { data, error } = await Promise.race([call, timeout]);
+  if (error || !data || typeof data.reply !== 'string' || !data.reply.trim()) throw new Error('ai-failed');
+  return data.reply.trim();
 }
 
 async function sendChatText() {
@@ -649,10 +676,22 @@ async function sendChatText() {
     return;
   }
 
-  // 5) Kuch samajh na aaye — flow me ho to pending sawal ki taraf, warna ghumta hua fallback
+  // 5) Kuch samajh na aaye — flow me ho to pending sawal ki taraf.
+  //    Warna: logged-in user ke liye AI brain (ortho-chat); fail ho to ghumta hua local fallback.
   if (inFlow) {
     await botSay('Is sawal ka jawab upar ke options se tap kar do 🌿 — ya naya shuru karna ho to "check-in" likho.');
     return;
+  }
+  if (currentUser) {
+    const typing = showTyping();
+    try {
+      const reply = await askOrthoBrain();
+      typing.remove();
+      await botSay(reply, 150);
+      return;
+    } catch {
+      typing.remove();
+    }
   }
   await botSay(nextFallback());
 }
