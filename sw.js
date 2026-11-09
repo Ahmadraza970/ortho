@@ -1,5 +1,5 @@
 // Ortho service worker — app shell cache + web push
-const CACHE = 'ortho-v1';
+const CACHE = 'ortho-v2';
 const SHELL = [
   '/', '/index.html', '/styles.css', '/app.js', '/config.js', '/guide-content.js',
   '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'

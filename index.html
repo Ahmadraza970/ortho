@@ -17,25 +17,8 @@
 </head>
 <body>
 
-<!-- ============ LOGIN ============ -->
-<section id="loginView" class="login-view" hidden>
-  <div class="login-card">
-    <img class="login-logo" src="/icons/icon-192.png" alt="Ortho logo" width="84" height="84">
-    <h1>Ortho</h1>
-    <p class="login-sub">Tumhara health saathi 🌿<br>Roz ka check-in, record aur doctor ki taiyaari — sab ek jagah.</p>
-    <form id="magicForm" class="magic-form">
-      <label for="emailInput">Apna email likho</label>
-      <input id="emailInput" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com" required>
-      <button type="submit" class="btn-primary" id="magicBtn">Login link bhejo</button>
-    </form>
-    <p id="magicMsg" class="form-msg" role="status"></p>
-    <p class="login-note">Email par ek link aayega — use kholo, seedha andar. Password ki koi tension nahi.<br><br>
-    🔒 Privacy: tumhara data sirf tumhare apne account me rehta hai. Koi aur use dekh nahi sakta.</p>
-  </div>
-</section>
-
-<!-- ============ APP ============ -->
-<div id="appView" hidden>
+<!-- ============ APP (hamesha khula — login sirf data wale kaam ke liye) ============ -->
+<div id="appView">
   <header class="app-header">
     <div class="brand">
       <img src="/icons/icon-192.png" alt="" width="34" height="34">
@@ -46,6 +29,23 @@
 
   <main id="mainEl">
 
+    <!-- ===== LOGIN CARD (sirf logged-out par dikhta hai; band bhi kar sakte ho) ===== -->
+    <div id="loginCard" class="login-card login-card-inline" hidden>
+      <button id="loginDismiss" class="login-dismiss" type="button" aria-label="Login card band karo">✕</button>
+      <img class="login-logo" src="/icons/icon-192.png" alt="Ortho logo" width="64" height="64">
+      <h1>Ortho</h1>
+      <p class="login-sub">Tumhara health saathi 🌿<br>Check-in save karne, record aur doctors ke liye login karo.<br>Chat aur Guide bina login ke bhi khule hain.</p>
+      <form id="magicForm" class="magic-form">
+        <label for="emailInput">Apna email likho</label>
+        <input id="emailInput" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com" required>
+        <button type="submit" class="btn-primary" id="magicBtn">Login link bhejo</button>
+      </form>
+      <p id="magicMsg" class="form-msg" role="status"></p>
+      <p class="login-note">Email par ek link aayega — use kholo, seedha andar. Password ki koi tension nahi.<br>
+      Note: login link usi browser me kholo jisme email daala tha, warna login har baar manga jayega.<br><br>
+      🔒 Privacy: tumhara data sirf tumhare apne account me rehta hai. Koi aur use dekh nahi sakta.</p>
+    </div>
+
     <!-- ===== CHAT ===== -->
     <section class="tab-page" id="page-chat" data-page="chat">
       <div id="chatLog" class="chat-log" aria-live="polite"></div>
@@ -54,12 +54,14 @@
         <input id="chatText" type="text" placeholder="Note likhna ho to yahan…" autocomplete="off">
         <button id="chatSend" class="btn-send" aria-label="Bhejo">➤</button>
       </div>
-      <p class="chat-hint">Ortho ek guided check-in saathi hai — sawal wahi, jawab tumhare tap par. Asli salah ke liye hamesha doctor.</p>
+      <p class="chat-hint">Ortho ek guided check-in saathi hai — "check-in" likho ya options tap karo, sawal-jawab bhi likh sakte ho. Asli salah ke liye hamesha doctor.</p>
     </section>
 
     <!-- ===== CHECK-IN FORM ===== -->
     <section class="tab-page" id="page-checkin" data-page="checkin" hidden>
       <h2 class="page-title" id="checkinTitle">Aaj ka check-in</h2>
+      <div class="login-needed empty-box" hidden>Check-in save karne ke liye login chahiye 🌿<br><button type="button" class="btn-small show-login-btn" style="margin-top:10px">Login karo</button></div>
+      <div class="auth-content">
       <form id="checkinForm" class="card form-card">
         <div class="field">
           <label for="fDate">Tareekh</label>
@@ -99,11 +101,14 @@
         <button type="submit" class="btn-primary" id="saveCheckinBtn">Save karo</button>
         <p id="checkinMsg" class="form-msg" role="status"></p>
       </form>
+      </div>
     </section>
 
     <!-- ===== RECORD ===== -->
     <section class="tab-page" id="page-record" data-page="record" hidden>
       <h2 class="page-title">Mera record</h2>
+      <div class="login-needed empty-box" hidden>Apna record dekhne ke liye login chahiye 🌿<br><button type="button" class="btn-small show-login-btn" style="margin-top:10px">Login karo</button></div>
+      <div class="auth-content">
       <div id="recordSummary" class="summary-grid"></div>
       <div class="card chart-card" id="chartCard" hidden>
         <h3>Pattern — naak band aur sar dard</h3>
@@ -111,12 +116,15 @@
         <div class="chart-legend"><span class="lg lg-nose">— Naak band</span><span class="lg lg-head">— Sar dard</span></div>
       </div>
       <div id="historyList" class="history-list"></div>
+      </div>
     </section>
 
     <!-- ===== DOCTORS ===== -->
     <section class="tab-page" id="page-doctors" data-page="doctors" hidden>
       <h2 class="page-title">Mere doctors (ENT)</h2>
       <p class="page-sub">Final faisla hamesha ghar walon ke saath. Number par tap karne se call lagegi.</p>
+      <div class="login-needed empty-box" hidden>Apne doctors dekhne ke liye login chahiye 🌿<br><button type="button" class="btn-small show-login-btn" style="margin-top:10px">Login karo</button></div>
+      <div class="auth-content">
       <div id="doctorList" class="doctor-list"></div>
       <form id="doctorForm" class="card form-card">
         <h3>Apna doctor jodo</h3>
@@ -128,6 +136,7 @@
         <button type="submit" class="btn-primary">Doctor jodo</button>
         <p id="doctorMsg" class="form-msg" role="status"></p>
       </form>
+      </div>
     </section>
 
     <!-- ===== GUIDE ===== -->
@@ -141,6 +150,8 @@
     <!-- ===== PROFILE ===== -->
     <section class="tab-page" id="page-profile" data-page="profile" hidden>
       <h2 class="page-title">Meri jaankari</h2>
+      <div class="login-needed empty-box" hidden>Apni jaankari dekhne-badalne ke liye login chahiye 🌿<br><button type="button" class="btn-small show-login-btn" style="margin-top:10px">Login karo</button></div>
+      <div class="auth-content">
       <div class="card">
         <h3>Meri takleef</h3>
         <ul class="fact-list">
@@ -174,6 +185,7 @@
         <p class="card-text small" id="userEmailLine"></p>
       </div>
       <footer class="app-footer">Made by Ahmad · <a href="https://ahmadrazaa.me" target="_blank" rel="noopener">ahmadrazaa.me</a></footer>
+      </div>
     </section>
   </main>
 
