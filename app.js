@@ -109,7 +109,7 @@ $('#magicForm').addEventListener('submit', async (e) => {
 
 $('#logoutBtn').addEventListener('click', async () => {
   await supabase.auth.signOut();
-  checkins = []; doctors = []; profileData = null; seeded = false; chatWelcomed = false; draft = {}; chatState = 'idle';
+  checkins = []; doctors = []; profileData = null; seeded = false; chatWelcomed = false; draft = {}; chatState = 'idle'; pendingPhoto = null;
   chatLog.innerHTML = ''; chatChips.innerHTML = '';
   setUser(null);
 });
@@ -520,13 +520,142 @@ function showTyping() {
   chatLog.appendChild(div); scrollChat();
   return div;
 }
-async function askOrthoBrain() {
+async function askOrthoBrain(extraUserText) {
   const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 30000));
-  const call = supabase.functions.invoke('ortho-chat', { body: { messages: chatHistoryForAI() } });
+  const messages = chatHistoryForAI();
+  // Photo flow jaisi jagah se ek tay-shuda sawal bhejna ho to wo history ke aakhir me jud jata hai
+  if (extraUserText) messages.push({ role: 'user', content: String(extraUserText).slice(0, 2000) });
+  const call = supabase.functions.invoke('ortho-chat', { body: { messages } });
   const { data, error } = await Promise.race([call, timeout]);
   if (error || !data || typeof data.reply !== 'string' || !data.reply.trim()) throw new Error('ai-failed');
   return data.reply.trim();
 }
+
+/* ================= DAWAI PHOTO FLOW =================
+   Photo -> function ka vision branch sirf NAAM padhta hai -> user confirm kare
+   ("haan"/"nahi") -> tabhi AI brain se us dawai ki jaankari aati hai.
+   Naam galat nikle ya photo na padh paye to user khud naam type kar sakta hai.
+   Pending state: { stage: 'confirm', name } | { stage: 'await_name' } | null.
+   Check-in trigger aate hi ye flow chup-chaap khatm ho jata hai (sendChatText step 1). */
+let pendingPhoto = null;
+const PHOTO_YES_RE = /^(haan|ha|han|ji|yes|yep|yup|sahi|hai|yehi|yahi|theek|thik|bilkul|ok)\b/;
+const PHOTO_NO_RE = /^(nahi|nahin|na|no|nope|galat|wrong)\b/;
+
+function meSayPhoto(dataUrl) {
+  const div = document.createElement('div');
+  div.className = 'msg me';
+  const img = document.createElement('img');
+  img.src = dataUrl;
+  img.alt = 'Dawai ki photo';
+  img.style.cssText = 'max-width:180px;max-height:240px;border-radius:10px;display:block';
+  div.appendChild(img);
+  chatLog.appendChild(div); scrollChat();
+}
+
+function downscaleImageFile(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const MAX = 1024;
+        const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
+        const w = Math.max(1, Math.round(img.naturalWidth * scale));
+        const h = Math.max(1, Math.round(img.naturalHeight * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      } catch (e) { URL.revokeObjectURL(url); reject(e); }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('img-load')); };
+    img.src = url;
+  });
+}
+
+async function sendMedicineInfoQuery(name) {
+  const query = `Mujhe '${name}' dawai ke baare me jaankari do — ye kis kaam aati hai, aur iske baare me aam taur par kya jaanna chahiye?`;
+  const typing = showTyping();
+  try {
+    const reply = await askOrthoBrain(query);
+    typing.remove();
+    await botSay(reply, 150);
+  } catch {
+    typing.remove();
+    await botSay('Abhi jaankari nahi mil payi 😔 Net slow lag raha hai — thodi der baad dawai ka naam likh kar phir try karna, ya Zara se WhatsApp par puchh lena.');
+  }
+}
+
+// Photo-pending haalat me aaya hua text. true = text yahin kharch ho gaya;
+// false = pending khatm, normal flow aage chalega (meSay abhi nahi hua hai).
+async function handlePhotoPending(raw, t) {
+  if (!pendingPhoto) return false;
+  if (pendingPhoto.stage === 'confirm') {
+    if (PHOTO_NO_RE.test(t)) {
+      pendingPhoto = { stage: 'await_name' };
+      meSay(raw);
+      await botSay('Theek hai, koi baat nahi 🌿 Dawai ka naam khud type karke bhej do — main usi ki jaankari de dunga.');
+      return true;
+    }
+    if (PHOTO_YES_RE.test(t)) {
+      const name = pendingPhoto.name;
+      pendingPhoto = null;
+      meSay(raw);
+      await sendMedicineInfoQuery(name);
+      return true;
+    }
+    pendingPhoto = null; // na haan na nahi — flow chhodo, normal baat aage badhe
+    return false;
+  }
+  if (pendingPhoto.stage === 'await_name') {
+    const name = raw.trim().slice(0, 80);
+    pendingPhoto = null;
+    meSay(raw);
+    await sendMedicineInfoQuery(name);
+    return true;
+  }
+  pendingPhoto = null;
+  return false;
+}
+
+$('#chatPhotoBtn').addEventListener('click', () => { $('#chatPhoto').click(); });
+$('#chatPhoto').addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  let dataUrl;
+  try {
+    dataUrl = await downscaleImageFile(file);
+  } catch {
+    await botSay('Photo khul nahi payi 😔 Ek baar phir photo chun kar bhejo, ya dawai ka naam type kar do — main jaankari de dunga.');
+    return;
+  }
+  meSayPhoto(dataUrl);
+  if (!currentUser) {
+    pendingPhoto = null;
+    await botSay('Photo mil gayi 📷 Lekin dawai ki pehchan login ke baad hi chalegi — pehle upar wale card se login kar lo, phir photo bhejna, main naam padh dunga 🌿');
+    showLoginCard();
+    return;
+  }
+  const typing = showTyping();
+  let data = null;
+  let failed = false;
+  try {
+    const res = await supabase.functions.invoke('ortho-chat', { body: { image: dataUrl } });
+    if (res.error) failed = true; else data = res.data;
+  } catch { failed = true; }
+  typing.remove();
+  if (!failed && data && typeof data.medicine_name === 'string' && data.medicine_name.trim()) {
+    const name = data.medicine_name.trim();
+    pendingPhoto = { stage: 'confirm', name };
+    await botSay(`Photo me dawai ka naam ye padha maine: "${name}". Kya yehi dawai hai? 'Haan' ya 'Nahi' likho.`);
+  } else {
+    // photo_unreadable ya invoke fail — ek hi graceful line, raw error kabhi nahi
+    pendingPhoto = { stage: 'await_name' };
+    await botSay('Photo saaf nahi padhi gayi 😔 Roshni me, paas se dobara photo bhejo — ya dawai ka naam yahin type kar do, main usi ki jaankari de dunga.');
+  }
+});
 
 async function sendChatText() {
   const inp = $('#chatText');
@@ -538,9 +667,18 @@ async function sendChatText() {
 
   // 1) Check-in trigger — kisi bhi spelling me ("check-in", "Check in", "checkin", "CHECK-IN"),
   //    kisi bhi state me (saving ke alawa) — flow hamesha shuru hoga.
+  //    Photo flow pending ho to wo yahan chup-chaap khatm ho jata hai.
   if (norm.includes('checkin')) {
+    pendingPhoto = null;
     if (chatState !== 'saving') { meSay(raw); startChat(); }
     return;
+  }
+
+  // 1b) Dawai photo flow ka pending jawab (confirm haan/nahi, ya khud type kiya naam) —
+  //     baaki saare intents se PEHLE pakda jata hai.
+  if (pendingPhoto) {
+    const consumed = await handlePhotoPending(raw, t);
+    if (consumed) return;
   }
 
   // 2) Note state — likha hua text hi aaj ka note hai
