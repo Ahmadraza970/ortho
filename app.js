@@ -15,6 +15,9 @@ let profileData = null;
 
 const SLEEP_LABEL = { achhi: 'Achhi 😴', beech: 'Beech wali', kharab: 'Kharab 😖' };
 const STUDY_LABEL = { koi_nahi: 'Padhai par koi asar nahi', thoda: 'Padhai par thoda asar', zyada: 'Padhai par zyada asar' };
+/* Logged-out chat check-in ka device-local record (date-stamped). Login hone par
+   mergeLocalCheckin() ise account ke daily record me mila deta hai. */
+const LOCAL_CHECKIN_KEY = 'ortho_local_checkin_v1';
 
 function localDateStr(d = new Date()) {
   const p = (n) => String(n).padStart(2, '0');
@@ -122,6 +125,7 @@ async function afterLogin() {
   const { data: fresh } = await supabase.auth.getUser();
   if (fresh?.user) { currentUser = fresh.user; renderGoogleLink(fresh.user); }
   await ensureSeedCheckin();
+  await mergeLocalCheckin();
   await loadEverything();
   if (!seeded) { seeded = true; startChat(true); }
 }
@@ -135,6 +139,27 @@ async function ensureSeedCheckin() {
       note: 'Pehla record — WhatsApp par bataya tha (9 Nov, shaam).'
     });
   }
+}
+
+/* Logged-out haalat me chat check-in device par (localStorage, date-stamped) save
+   hota hai. Login hote hi wahi record account me merge kar do — taaki chat aur
+   form ek hi daily record rakhein. Server par us din ka record pehle se ho to
+   use chhuo mat, sirf local copy hata do. */
+async function mergeLocalCheckin() {
+  let rec = null;
+  try { rec = JSON.parse(localStorage.getItem(LOCAL_CHECKIN_KEY) || 'null'); } catch { rec = null; }
+  if (!rec || !rec.date) return;
+  try {
+    const { data } = await supabase.from('checkins').select('id').eq('date', rec.date).maybeSingle();
+    if (!data) {
+      await supabase.from('checkins').insert({
+        user_id: currentUser.id, date: rec.date,
+        sleep: rec.sleep ?? null, nose: rec.nose ?? null, headache: rec.headache ?? null,
+        note: rec.note ?? null
+      });
+    }
+    localStorage.removeItem(LOCAL_CHECKIN_KEY);
+  } catch { /* merge na ho paye to local record bana rehne do — agle login par phir koshish hogi */ }
 }
 
 $('#magicForm').addEventListener('submit', async (e) => {
@@ -170,7 +195,7 @@ $('#googleBtn').addEventListener('click', async () => {
 
 $('#logoutBtn').addEventListener('click', async () => {
   await supabase.auth.signOut();
-  checkins = []; doctors = []; profileData = null; seeded = false; chatWelcomed = false; draft = {}; chatState = 'idle'; pendingPhoto = null;
+  checkins = []; doctors = []; profileData = null; seeded = false; chatWelcomed = false; draft = {}; chatState = 'idle'; flowDate = null; flowNagged = false; pendingPhoto = null;
   chatLog.innerHTML = ''; chatChips.innerHTML = '';
   setUser(null);
 });
@@ -263,6 +288,9 @@ $('#checkinForm').addEventListener('submit', async (e) => {
       note: $('#fNote').value.trim() || null
     });
     msg($('#checkinMsg'), '✅ Save ho gaya!');
+    // Aaj ka record form se badla — chat me koi purana pending flow ho to use bhi
+    // khatm kar do; chat-side state ab isi record se DONE padhega.
+    if ($('#fDate').value === localDateStr()) clearPendingFlow();
   } catch { msg($('#checkinMsg'), 'Save nahi hua — net check karke phir try karo.', true); }
   btn.disabled = false; btn.textContent = 'Save karo';
 });
@@ -453,6 +481,49 @@ const chatLog = $('#chatLog');
 const chatChips = $('#chatChips');
 let chatState = 'idle';
 let draft = {};
+/* Pending check-in flow ki suraksha:
+   flowDate — flow kis din ka hai; din badalte hi flow purana (expire) mana jayega.
+   flowNagged — is stall me "(Wapas check-in par…)" reminder ek baar dikh chuka hai?
+   Dono sirf memory me rehte hain — app reload par pending flow khud khatm. */
+let flowDate = null;
+let flowNagged = false;
+
+/* Aaj ka record — pehle server/load kiye hue checkins me, warna device-local
+   (logged-out) record me. Dono ka shape ek jaisa hai (sleep/nose/headache). */
+function todayRecord() {
+  return checkins.find((r) => r.date === localDateStr()) || localTodayRecord();
+}
+function localTodayRecord() {
+  try {
+    const rec = JSON.parse(localStorage.getItem(LOCAL_CHECKIN_KEY) || 'null');
+    return rec && rec.date === localDateStr() ? rec : null;
+  } catch { return null; }
+}
+function saveLocalCheckin(rec) {
+  try { localStorage.setItem(LOCAL_CHECKIN_KEY, JSON.stringify(rec)); } catch {}
+}
+/* Check-in din me EK hi baar: aaj ka record tabhi "ho chuka" hai jab teeno bunyadi
+   jawab (neend + naak band + sar dard) maujood hon. */
+function checkinDoneToday() {
+  const r = todayRecord();
+  return !!(r && r.sleep != null && r.nose != null && r.headache != null);
+}
+function todayDoneLine() {
+  const r = todayRecord();
+  return `Aaj ka check-in ho chuka hai ✓ — Neend: ${SLEEP_LABEL[r.sleep] || r.sleep}, Naak band: ${r.nose}/10, Sar dard: ${r.headache}/10. Kuch badalna ho to Check-in tab se edit kar lo.`;
+}
+/* Pending flow ko chup-chaap khatm karna — state, draft aur on-screen chips teeno saaf. */
+function clearPendingFlow() {
+  chatState = 'idle'; draft = {}; flowDate = null; flowNagged = false;
+  chatChips.innerHTML = '';
+}
+/* Flow abhi zinda hai ya nahi — din badal gaya ho ya aaj ka check-in (chat/form se)
+   poora ho chuka ho to flow apne aap khatm; isiliye nagging dobara kabhi nahi aati. */
+function flowPending() {
+  if (!['sleep', 'nose', 'head', 'note'].includes(chatState)) return false;
+  if (flowDate !== localDateStr() || checkinDoneToday()) { clearPendingFlow(); return false; }
+  return true;
+}
 
 function renderBotHTML(text) {
   // Bot/model output untrusted hai: pehle HTML escape, phir sirf chhota sa markdown.
@@ -540,10 +611,18 @@ const numChips = (cb) => setChips(
   (it) => { meSay(String(it.val)); cb(it.val); }, true);
 
 async function startChat(first = false) {
-  chatLog.innerHTML = ''; chatChips.innerHTML = ''; draft = {}; chatState = 'start';
-  const today = checkins.find((r) => r.date === localDateStr());
+  chatLog.innerHTML = ''; chatChips.innerHTML = ''; draft = {}; flowDate = null; flowNagged = false;
   await botSay('Assalamualaikum Ahmad 🌤️ Main Ortho — tumhara health saathi.', first ? 150 : 100);
-  if (!currentUser) await botSay('Ek chhoti baat — abhi tum login nahi ho, isliye aakhir me record save karne ke liye login chahiye hoga (upar wala card). Sawal main abhi puchh deta hun 🌿');
+  // Din me ek hi check-in: aaj ka poora ho chuka ho to koi flow/options nahi —
+  // sirf ek line me aaj ka haal, bas.
+  if (checkinDoneToday()) {
+    chatState = 'idle';
+    await botSay(todayDoneLine());
+    return;
+  }
+  chatState = 'start';
+  const today = todayRecord();
+  if (!currentUser) await botSay('Ek chhoti baat — abhi tum login nahi ho, to aaj ka record is device par save hoga; login karne par wahi record tumhare account me jud jayega 🌿');
   if (today && (today.nose != null || today.sleep)) {
     await botSay(`Aaj ka check-in pehle se hai ✅ (Naak band ${today.nose ?? '—'}/10, sar dard ${today.headache ?? '—'}/10). Update karna hai?`);
     setChips([
@@ -562,6 +641,8 @@ async function startChat(first = false) {
 
 async function askSleep() {
   chatState = 'sleep';
+  flowDate = localDateStr();
+  flowNagged = false;
   await botSay('Pehle ye batao — raat ko neend kaisi thi?');
   setChips([
     { label: 'Achhi 😴', val: 'achhi' },
@@ -571,40 +652,56 @@ async function askSleep() {
 }
 
 async function askNose() {
+  // Beech flow me aaj ka check-in kisi aur raaste (form tab) se poora ho gaya ho to ruk jao
+  if (checkinDoneToday()) { clearPendingFlow(); await botSay(todayDoneLine()); return; }
   chatState = 'nose';
+  flowNagged = false;
   await botSay('Ab naak ka haal — abhi naak kitni band lag rahi hai?\n(0 = bilkul khuli, 10 = poori band)');
   numChips((v) => { draft.nose = v; askHead(); });
 }
 
 async function askHead() {
+  if (checkinDoneToday()) { clearPendingFlow(); await botSay(todayDoneLine()); return; }
   chatState = 'head';
+  flowNagged = false;
   await botSay('Aur sar dard? (0 = bilkul nahi, 10 = sabse tez)');
   numChips((v) => { draft.headache = v; askNote(); });
 }
 
 async function askNote() {
+  if (checkinDoneToday()) { clearPendingFlow(); await botSay(todayDoneLine()); return; }
   chatState = 'note';
+  flowNagged = false;
   await botSay('Koi chhota note hai aaj ke liye? Neeche likh sakte ho — ya "Note nahi hai" tap kar do.');
   setChips([{ label: 'Note nahi hai', val: 'skip' }], async (it) => { meSay(it.label); finishChat(null); });
 }
 
 async function finishChat(noteText) {
+  chatChips.innerHTML = '';
+  // Aaj ka check-in kisi aur raaste se pehle hi poora ho chuka ho to stale draft se use mat badlo
+  if (checkinDoneToday()) { clearPendingFlow(); await botSay(todayDoneLine()); return; }
   chatState = 'saving';
   await botSay('Ek second — save kar raha hun…', 150);
+  const doneMsg = `Ho gaya ✅\nAaj ka record: Neend ${draft.sleep ? SLEEP_LABEL[draft.sleep] : '—'} · Naak band ${draft.nose}/10 · Sar dard ${draft.headache}/10`;
+  if (!currentUser) {
+    // Logged-out: record device par date-stamped save — aaj dobara check-in nahi
+    // puchega, aur login par mergeLocalCheckin() ise account me mila dega.
+    saveLocalCheckin({ date: localDateStr(), sleep: draft.sleep ?? null, nose: draft.nose ?? null, headache: draft.headache ?? null, note: noteText || null });
+    chatState = 'idle'; flowDate = null; flowNagged = false;
+    await botSay(doneMsg);
+    await botSay('Ye record abhi is device par save hai 🌿 Login karne par tumhare account me jud jayega. Aur aaj ke liye check-in dobara nahi puchhunga — kal phir milega.');
+    await botSay(tipFor(draft.nose, draft.headache));
+    return;
+  }
   try {
     await saveCheckin({ date: localDateStr(), sleep: draft.sleep ?? null, nose: draft.nose, headache: draft.headache, note: noteText || null });
   } catch {
     chatState = 'idle';
-    if (!currentUser) {
-      await botSay('Tumhare jawab taiyaar hain 🌿 Bas ek kadam bacha hai — record save karne ke liye login chahiye. Upar login card dikha diya hai: email daalo, usi browser me link kholo, phir wapas aakar "check-in" likh dena.');
-      showLoginCard();
-    } else {
-      await botSay('Arey — save nahi hua 😔 Net check karke "check-in" likh kar phir try karna.');
-    }
+    await botSay('Arey — save nahi hua 😔 Net check karke "check-in" likh kar phir try karna.');
     return;
   }
-  chatState = 'idle';
-  await botSay(`Ho gaya ✅\nAaj ka record: Neend ${draft.sleep ? SLEEP_LABEL[draft.sleep] : '—'} · Naak band ${draft.nose}/10 · Sar dard ${draft.headache}/10`);
+  chatState = 'idle'; flowDate = null; flowNagged = false;
+  await botSay(doneMsg);
   await botSay(tipFor(draft.nose, draft.headache));
 }
 
@@ -829,11 +926,17 @@ async function sendChatText() {
   const norm = t.replace(/[\s\-_]+/g, '');
 
   // 1) Check-in trigger — kisi bhi spelling me ("check-in", "Check in", "checkin", "CHECK-IN"),
-  //    kisi bhi state me (saving ke alawa) — flow hamesha shuru hoga.
+  //    kisi bhi state me (saving ke alawa). Aaj ka check-in ho chuka ho to flow ki
+  //    jagah sirf summary line aati hai (neeche dekho).
   //    Photo flow pending ho to wo yahan chup-chaap khatm ho jata hai.
   if (norm.includes('checkin')) {
     pendingPhoto = null;
-    if (chatState !== 'saving') { meSay(raw); startChat(); }
+    if (chatState !== 'saving') {
+      meSay(raw);
+      // Aaj ka check-in ho chuka ho to flow dobara NAHI — sirf ek line ka summary
+      if (checkinDoneToday()) { clearPendingFlow(); await botSay(todayDoneLine()); }
+      else startChat();
+    }
     return;
   }
 
@@ -843,6 +946,9 @@ async function sendChatText() {
     const consumed = await handlePhotoPending(raw, t);
     if (consumed) return;
   }
+
+  // 1c) Din badal gaya ho to purana pending flow chup-chaap saaf — kal ke sawal aaj nahi ghumenge
+  if (['sleep', 'nose', 'head', 'note'].includes(chatState) && flowDate !== localDateStr()) clearPendingFlow();
 
   // 2) Note state — likha hua text hi aaj ka note hai
   if (chatState === 'note') { meSay(raw); finishChat(raw); return; }
@@ -865,10 +971,17 @@ async function sendChatText() {
   }
   if (chatState === 'saving') { meSay(raw); return; }
 
-  // 4) Simple intents — flow chal raha ho to bhi jawab milega, sawal baad me yaad dila denge
+  // 4) Simple intents — flow chal raha ho to bhi jawab milega.
+  //    Reminder "(Wapas check-in par…)" ek stall me SIRF EK BAAR lagta hai; agli
+  //    unrelated baat par flow chup-chaap khatm ho jata hai (chips bhi saaf) —
+  //    aur aaj ka check-in ho chuka ho to flowPending() khud hi saaf kar deta hai.
   meSay(raw);
-  const inFlow = chatState === 'sleep' || chatState === 'nose' || chatState === 'head';
-  const flowNote = inFlow ? '\n\n(Wapas check-in par — upar diye options me se jawab tap kar do, main wahi ruka hun 🌿)' : '';
+  let inFlow = flowPending() && ['sleep', 'nose', 'head'].includes(chatState);
+  let flowNote = '';
+  if (inFlow) {
+    if (!flowNagged) { flowNote = '\n\n(Wapas check-in par — upar diye options me se jawab tap kar do, main wahi ruka hun 🌿)'; flowNagged = true; }
+    else { clearPendingFlow(); inFlow = false; }
+  }
   const loginLine = 'Ye jaankari tumhare account ke record me hai — dekhne ke liye login chahiye 🌿 Upar wale card se login link mangwa lo.';
 
   // 4a) Personal data — sirf asal loaded record se jawab; data na ho to saaf mana, andaz kabhi nahi
