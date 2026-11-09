@@ -510,6 +510,14 @@ function nextFallback() {
   return FALLBACKS[i];
 }
 
+/* Dawai-sawal ki pehchan (sendChatText step 4 me istemal):
+   MED_RX_RE — SIRF prescription-maangne wali bhasha: kaunsi dawai LU, dose kitni, kab tak lu,
+   dawai likh do/suggest karo, prescription. Jaankari wale sawal ("Glynaze konsi dawa h",
+   "Torex kya karti h", "X ke baare me batao") isse match NAHI hone chahiye — wo brain ke hain.
+   MED_INFO_RE — dawai-ish shabd; logged-out jaankari sawal ko login ki taraf bhejne ke liye. */
+const MED_RX_RE = /(dawai|dawa|dava|goli|tablet|medicine|spray)\s+(lu|loon|khaun|khau|kha lu|le lu|lena chahiye|leni chahiye|khani chahiye|le sakta|le sakti|kha sakta|kha sakti)\b|\b(dose|dosage|khurak)\b|kitne\s*(mg|ml|gram)\b|kab\s+tak\s+[^.?!]{0,24}\b(lu|loon|khaun|khana|lena|leni)\b|dawai\s+(likh|suggest|prescribe)|prescription|mujhe\s+dawai|mere\s+liye\s+dawai/;
+const MED_INFO_RE = /(dawai|dwaai|dvaai|dawa|dava|tablet|goli|medicine|capsule|syrup|injection|ointment|cream|spray)|kya\s+(kaam|karti|karta)\b|ke\s+baare\s+me/;
+
 /* AI brain — local intent na mile to ortho-chat Edge Function (sirf logged-in user ke liye).
    Function ka contract: body { messages: [{ role, content }] } -> { reply, model }.
    Kuch bhi fail ho (net slow, timeout, function error) to chup-chaap local fallback chalega —
@@ -530,14 +538,25 @@ function showTyping() {
   return div;
 }
 async function askOrthoBrain(extraUserText) {
-  const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 30000));
   const messages = chatHistoryForAI();
   // Photo flow jaisi jagah se ek tay-shuda sawal bhejna ho to wo history ke aakhir me jud jata hai
   if (extraUserText) messages.push({ role: 'user', content: String(extraUserText).slice(0, 2000) });
-  const call = supabase.functions.invoke('ortho-chat', { body: { messages } });
-  const { data, error } = await Promise.race([call, timeout]);
-  if (error || !data || typeof data.reply !== 'string' || !data.reply.trim()) throw new Error('ai-failed');
-  return data.reply.trim();
+  // Free tier par kabhi-kabhi pehli call aise hi fail ho jati hai (hiccup) — ek retry zaroor.
+  // Typing bubble caller ke paas hai; wo retry ke dauraan bhi bana rehta hai.
+  let lastErr = new Error('ai-failed');
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 30000));
+      const call = supabase.functions.invoke('ortho-chat', { body: { messages } });
+      const { data, error } = await Promise.race([call, timeout]);
+      if (error || !data || typeof data.reply !== 'string' || !data.reply.trim()) throw new Error('ai-failed');
+      return data.reply.trim();
+    } catch (e) {
+      lastErr = e;
+      if (attempt === 0) await new Promise((r) => setTimeout(r, 1500));
+    }
+  }
+  throw lastErr;
 }
 
 /* ================= DAWAI PHOTO FLOW =================
@@ -803,8 +822,34 @@ async function sendChatText() {
     await botSay('Namaste Ahmad 🌤️ Main theek hun, tum batao — aaj naak kaisi hai?\n"check-in" likho to record kar deta hun, ya Guide / Doctors tab dekh lo.' + flowNote);
     return;
   }
-  if (/(dawai|dwaai|dvaai|dawa|dava|tablet|goli|spray|medicine|dose|khurak|ilaaj|ilaj)/.test(t)) {
+  // Dawai ke sawal — pehle yahan ek bada catch-all tha jo har dawai-ish shabd par local
+  // inkaar thop deta tha; galat tha, kyunki jaankari wale sawal bhi ruk jate the.
+  // Ab: (a) prescription-maangne wali bhasha (MED_RX_RE) par local inkaar SIRF logged-out par —
+  // logged-in par wahi sawal brain ke paas jata hai, brain ka apna prompt info-only /
+  // no-prescription rule context ke saath lagata hai.
+  // (b) jaankari wala sawal (naam, "kya kaam karti hai") logged-in par seedha brain ko —
+  // beech wale symptom/guide intents use na rok dein, isiliye brain yahin bulaya jata hai.
+  // (c) logged-out jaankari sawal par login ki taraf — jaankari login ke baad AI se milti hai.
+  if (MED_RX_RE.test(t) && !currentUser) {
     await botSay('Dawai wala sawal samajh sakta hun, Ahmad — lekin iska jawab main nahi de sakta 🌿\nDawai ka faisla — kaunsi, kitni, kab tak — sirf doctor karte hain, kyunki wo tumhari naak dekh kar aur purani report samajh kar faisla lete hain. Galat dawai faayde ki jagah nuksaan kar sakti hai.\nTum ye kar sakte ho:\n• 🩺 Doctors tab — tumhare 3 ENT doctors hain, naam ke paas wale number se seedha call lag jayegi\n• 📖 Guide tab — sinus aur spray ke sahi tareeke ki general jankari\n• Asal sawal-jawab ke liye Zara se WhatsApp par baat karo — wahan main sawal pehle puchh kar samjhati hun.' + flowNote);
+    return;
+  }
+  if (MED_RX_RE.test(t) || MED_INFO_RE.test(t)) {
+    if (!currentUser) {
+      await botSay('Dawai ki jaankari ke liye pehle login karna hoga 🌿 Login ke baad kisi bhi dawai ke baare me AI se jaankari mil jayegi — kis kaam aati hai, aam taur par kya dhyaan rakhna chahiye. Upar wale card se login link mangwa lo.' + flowNote);
+      showLoginCard();
+      return;
+    }
+    const typing = showTyping();
+    try {
+      const reply = await askOrthoBrain();
+      typing.remove();
+      await botSay(reply + flowNote, 150);
+      return;
+    } catch {
+      typing.remove();
+    }
+    await botSay(nextFallback() + flowNote);
     return;
   }
   if (/(doctor|ent|hospital|clinic|appointment)/.test(t)) {
