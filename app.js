@@ -45,11 +45,31 @@ let loginDismissed = false;
 let lastUid = null;
 let chatWelcomed = false;
 
+/* OAuth / magic-link return par URL me error aa sakta hai (error= / error_description,
+   query ya hash me). Raw error kabhi nahi dikhana — login card dikha do aur URL saaf
+   kar do taaki reload par dobara na aaye. detectSessionInUrl client init me true hai,
+   isiliye safal returns (tokens) Supabase khud sambhal leta hai; hum sirf error case
+   dekhte hain aur tokens wale URL ko haath nahi lagate. */
+let authUrlError = false;
+function cleanAuthErrorFromUrl() {
+  const q = new URLSearchParams(window.location.search);
+  const h = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  if (q.get('error') || q.get('error_description') || h.get('error') || h.get('error_description')) {
+    authUrlError = true;
+    history.replaceState(null, '', window.location.pathname);
+  }
+}
+
 async function init() {
+  cleanAuthErrorFromUrl();
   $('#guideBody').innerHTML = window.GUIDE_HTML || '';
   const { data } = await supabase.auth.getSession();
   await setUser(data.session?.user ?? null);
   supabase.auth.onAuthStateChange((_e, session) => { setUser(session?.user ?? null); });
+  if (authUrlError && !currentUser) {
+    $('#loginCard').hidden = false;
+    window.scrollTo({ top: 0 });
+  }
 }
 
 async function setUser(user) {
@@ -60,6 +80,7 @@ async function setUser(user) {
   $$('.auth-content').forEach((el) => { el.hidden = !loggedIn; });
   if (loggedIn) {
     $('#userEmailLine').textContent = 'Login: ' + (user.email || '');
+    renderGoogleLink(user);
     if (lastUid !== user.id) { lastUid = user.id; await afterLogin(); }
   } else {
     lastUid = null;
@@ -73,11 +94,33 @@ function showLoginCard() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+/* Profile tab ka Google-link state: user.identities me provider 'google' ho to
+   account pehle se juda hai — button ki jagah sirf status dikhega. */
+function renderGoogleLink(user) {
+  const state = $('#googleLinkState');
+  const btn = $('#googleLinkBtn');
+  if (!state || !btn || !user) return;
+  const linked = (user.identities || []).some((i) => i.provider === 'google');
+  if (linked) {
+    state.textContent = 'Google account: juda hua hai ✓';
+    btn.hidden = true;
+  } else {
+    state.textContent = 'Google account: joda nahi hai';
+    btn.hidden = false;
+    btn.disabled = false;
+    btn.textContent = 'Google jodo';
+  }
+}
+
 $('#loginDismiss').addEventListener('click', () => { loginDismissed = true; $('#loginCard').hidden = true; });
 $$('.show-login-btn').forEach((b) => b.addEventListener('click', showLoginCard));
 
 let seeded = false;
 async function afterLogin() {
+  // OAuth/link return ke baad identities taze (fresh) user se padho — session wala
+  // user object kabhi-kabhi purana ho sakta hai, Profile ka Google state isi par tikta hai.
+  const { data: fresh } = await supabase.auth.getUser();
+  if (fresh?.user) { currentUser = fresh.user; renderGoogleLink(fresh.user); }
   await ensureSeedCheckin();
   await loadEverything();
   if (!seeded) { seeded = true; startChat(true); }
@@ -105,6 +148,24 @@ $('#magicForm').addEventListener('submit', async (e) => {
   btn.disabled = false; btn.textContent = 'Login link bhejo';
   if (error) msg($('#magicMsg'), 'Link nahi gaya — email phir se check karke try karo.', true);
   else msg($('#magicMsg'), '✅ Link bhej diya hai! Apna email kholo aur link par tap karo.');
+});
+
+/* Google sign-in (OAuth). Safal ho to browser Google ki taraf redirect ho jata hai —
+   wapas aane par session detectSessionInUrl se khud mil jata hai. Kuch bhi fail ho
+   (provider abhi live na ho, net atak jaye) to ek saaf bot line; raw error kabhi nahi. */
+$('#googleBtn').addEventListener('click', async () => {
+  const btn = $('#googleBtn');
+  btn.disabled = true;
+  try {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + '/' }
+    });
+    if (error) throw error;
+  } catch {
+    btn.disabled = false;
+    await botSay('Google login abhi nahi ho paya — email link wala tareeka chal raha hai');
+  }
 });
 
 $('#logoutBtn').addEventListener('click', async () => {
@@ -318,6 +379,29 @@ $('#doctorForm').addEventListener('submit', async (e) => {
 });
 
 /* ================= PROFILE ================= */
+/* Google identity ko MAUJOODA account se jodo — taaki email magic-link wala user aur
+   Google login ek hi user rahe, data (check-ins/doctors) do hisso me na bante.
+   NOTE: ye tabhi chalega jab project settings me "Manual linking" ON ho; OFF ho to
+   linkIdentity error dega — use catch karke saaf line dikhayenge, button bekaar-safe
+   rahega (parent dashboard se setting on karega). */
+$('#googleLinkBtn').addEventListener('click', async () => {
+  if (!currentUser) { showLoginCard(); return; }
+  const btn = $('#googleLinkBtn');
+  btn.disabled = true; btn.textContent = 'Google se jod raha hai…';
+  try {
+    const { error } = await supabase.auth.linkIdentity({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + '/' }
+    });
+    if (error) throw error;
+    // Safal: browser Google ki taraf gaya; return par onAuthStateChange -> setUser ->
+    // renderGoogleLink state khud refresh kar dega.
+  } catch {
+    btn.disabled = false; btn.textContent = 'Google jodo';
+    msg($('#googleLinkMsg'), 'Google abhi nahi jud paya — thodi der baad phir try karo.', true);
+  }
+});
+
 $('#profileForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   if (!currentUser) { msg($('#profileMsg'), 'Save karne ke liye pehle login karo — upar wale card se login link mangwao.', true); showLoginCard(); return; }
