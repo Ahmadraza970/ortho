@@ -370,10 +370,19 @@ const chatChips = $('#chatChips');
 let chatState = 'idle';
 let draft = {};
 
+function renderBotHTML(text) {
+  // Bot/model output untrusted hai: pehle HTML escape, phir sirf chhota sa markdown.
+  const escaped = escapeHtml(String(text ?? ''));
+  return escaped.split(/\r?\n/).map((line) => {
+    let out = line.replace(/^[-*]\s+/, '• ');
+    out = out.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+    return out;
+  }).join('<br>');
+}
 function botSay(text, delay = 300) {
   return new Promise((res) => setTimeout(() => {
     const div = document.createElement('div');
-    div.className = 'msg bot'; div.textContent = text;
+    div.className = 'msg bot'; div.innerHTML = renderBotHTML(text);
     chatLog.appendChild(div); scrollChat(); res();
   }, delay));
 }
