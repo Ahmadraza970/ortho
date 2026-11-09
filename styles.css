@@ -1,0 +1,130 @@
+:root{
+  --teal:#0B6E4F; --teal-dark:#095C42; --teal-soft:#E7F4EF;
+  --ink:#14201B; --muted:#5C6B64; --line:#E4EAE6;
+  --bg:#FFFFFF; --card:#FFFFFF; --soft:#F6F8F7;
+  --amber:#D97706; --red:#C2410C; --radius:18px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif;
+  color:var(--ink); background:var(--bg); font-size:16px; line-height:1.55}
+a{color:var(--teal)}
+button{font:inherit; cursor:pointer}
+input,select,textarea{font:inherit; color:var(--ink)}
+
+/* ---------- login ---------- */
+.login-view{min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:24px; background:linear-gradient(180deg,#F2F8F5, #FFFFFF)}
+.login-card{max-width:400px; width:100%; text-align:center}
+.login-logo{border-radius:22px}
+.login-card h1{font-size:40px; margin:14px 0 6px; letter-spacing:-.5px}
+.login-sub{color:var(--muted); margin:0 0 26px}
+.magic-form{text-align:left}
+.magic-form label{display:block; font-weight:600; margin-bottom:8px}
+.magic-form input{width:100%; padding:14px 16px; border:1.5px solid var(--line); border-radius:14px; margin-bottom:12px; background:#fff}
+.magic-form input:focus{outline:2px solid var(--teal); outline-offset:1px; border-color:var(--teal)}
+.login-note{color:var(--muted); font-size:14px; margin-top:22px}
+
+/* ---------- buttons ---------- */
+.btn-primary{display:block; width:100%; padding:14px 18px; border:none; border-radius:14px;
+  background:var(--teal); color:#fff; font-weight:700; font-size:16px}
+.btn-primary:active{background:var(--teal-dark)}
+.btn-primary:disabled{opacity:.55}
+.btn-ghost{padding:10px 16px; border:1.5px solid var(--line); background:#fff; border-radius:12px; font-weight:600}
+.form-msg{min-height:22px; color:var(--teal-dark); font-size:14px; margin:10px 0 0}
+.form-msg.err{color:var(--red)}
+
+/* ---------- app frame ---------- */
+.app-header{position:sticky; top:0; z-index:5; display:flex; align-items:center; justify-content:space-between;
+  padding:12px 18px; background:rgba(255,255,255,.92); backdrop-filter:blur(8px); border-bottom:1px solid var(--line)}
+.brand{display:flex; align-items:center; gap:9px; font-weight:800; font-size:20px}
+.brand img{border-radius:9px}
+.header-tag{color:var(--muted); font-size:13px}
+main{max-width:640px; margin:0 auto; padding:18px 16px 110px}
+.page-title{font-size:24px; margin:4px 0 14px; letter-spacing:-.3px}
+.page-sub{color:var(--muted); margin:-8px 0 16px; font-size:14px}
+.card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:18px; margin-bottom:16px}
+.card h3{margin:0 0 10px; font-size:17px}
+.card-text{color:var(--muted); margin:0 0 12px}
+.card-text.small{font-size:13px; margin-top:10px}
+.app-footer{text-align:center; color:var(--muted); font-size:13px; padding:8px 0 4px}
+
+/* ---------- tabbar ---------- */
+.tabbar{position:fixed; left:0; right:0; bottom:0; z-index:10; display:flex;
+  background:rgba(255,255,255,.97); border-top:1px solid var(--line); padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+.tab-btn{flex:1; border:none; background:none; display:flex; flex-direction:column; align-items:center; gap:2px;
+  padding:7px 2px; font-size:11px; color:var(--muted); border-radius:12px; min-height:52px}
+.tab-btn .tab-ic{font-size:20px; line-height:1}
+.tab-btn.active{color:var(--teal); font-weight:700; background:var(--teal-soft)}
+
+/* ---------- forms ---------- */
+.form-card .field{margin-bottom:18px}
+.field label,.field-label{display:block; font-weight:600; margin-bottom:8px}
+.field .opt{color:var(--muted); font-weight:400; font-size:13px}
+.field input[type=text],.field input[type=tel],.field input[type=date],.field select,.field textarea{
+  width:100%; padding:13px 14px; border:1.5px solid var(--line); border-radius:13px; background:#fff}
+.field textarea{resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--teal); outline-offset:1px; border-color:var(--teal)}
+.chip-row{display:flex; gap:8px; flex-wrap:wrap}
+.chip{padding:11px 16px; border:1.5px solid var(--line); background:#fff; border-radius:999px; font-weight:600; min-height:48px}
+.chip.sel{background:var(--teal); border-color:var(--teal); color:#fff}
+.slider{width:100%; height:44px; accent-color:var(--teal)}
+.slider-scale{display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-top:-4px}
+
+/* ---------- chat ---------- */
+.chat-log{display:flex; flex-direction:column; gap:10px; padding-bottom:8px}
+.msg{max-width:86%; padding:12px 15px; border-radius:18px; white-space:pre-wrap; word-break:break-word}
+.msg.bot{background:var(--soft); border:1px solid var(--line); align-self:flex-start; border-bottom-left-radius:6px}
+.msg.me{background:var(--teal); color:#fff; align-self:flex-end; border-bottom-right-radius:6px}
+.msg.sys{align-self:center; background:none; color:var(--muted); font-size:13px; padding:2px}
+.chat-chips{display:flex; flex-wrap:wrap; gap:8px; padding:10px 0 4px; min-height:10px}
+.chat-chips .chip{min-height:46px}
+.num-grid{display:grid; grid-template-columns:repeat(6,1fr); gap:7px; width:100%}
+.num-grid .chip{padding:10px 0; text-align:center}
+.chat-input-row{display:flex; gap:8px; margin-top:8px}
+.chat-input-row input{flex:1; padding:13px 15px; border:1.5px solid var(--line); border-radius:999px}
+.chat-input-row input:focus{outline:2px solid var(--teal); border-color:var(--teal)}
+.btn-send{width:50px; height:50px; border:none; border-radius:50%; background:var(--teal); color:#fff; font-size:18px; flex:none}
+.chat-hint{color:var(--muted); font-size:12.5px; text-align:center; margin:12px 6px 0}
+
+/* ---------- record ---------- */
+.summary-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px}
+.sum-card{background:var(--soft); border:1px solid var(--line); border-radius:var(--radius); padding:14px}
+.sum-card .sum-num{font-size:26px; font-weight:800; color:var(--teal-dark)}
+.sum-card .sum-label{color:var(--muted); font-size:13px}
+.chart-card svg{width:100%; height:auto; display:block}
+.chart-legend{display:flex; gap:18px; font-size:13px; color:var(--muted); margin-top:8px}
+.lg-nose{color:var(--teal); font-weight:700}.lg-head{color:var(--amber); font-weight:700}
+.history-list{display:flex; flex-direction:column; gap:10px}
+.hist-item{border:1px solid var(--line); border-radius:var(--radius); padding:14px 16px; background:#fff}
+.hist-top{display:flex; justify-content:space-between; align-items:baseline; gap:8px}
+.hist-date{font-weight:700}
+.hist-nums{color:var(--muted); font-size:14px; margin-top:3px}
+.hist-note{margin-top:5px; font-size:14px}
+.hist-actions{display:flex; gap:8px; margin-top:10px}
+.btn-small{padding:8px 14px; border-radius:10px; border:1.5px solid var(--line); background:#fff; font-weight:600; font-size:14px; min-height:42px}
+.btn-small.danger{color:var(--red); border-color:#F3C7B8}
+.empty-box{border:1.5px dashed var(--line); border-radius:var(--radius); padding:26px 18px; text-align:center; color:var(--muted)}
+
+/* ---------- doctors ---------- */
+.doctor-list{display:flex; flex-direction:column; gap:12px; margin-bottom:18px}
+.doc-card{border:1px solid var(--line); border-radius:var(--radius); padding:16px; background:#fff}
+.doc-name{font-weight:800; font-size:17px}
+.doc-detail{color:var(--teal-dark); font-weight:600; font-size:14px}
+.doc-place,.doc-note{color:var(--muted); font-size:14px; margin-top:2px}
+.doc-actions{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap}
+.btn-call{display:inline-flex; align-items:center; gap:6px; background:var(--teal); color:#fff; text-decoration:none;
+  padding:11px 18px; border-radius:12px; font-weight:700; min-height:46px}
+
+/* ---------- guide ---------- */
+.seema-box{background:#FFF7EA; border:1px solid #F0DFBB; color:#7A5410; border-radius:14px; padding:12px 15px; font-size:14.5px; margin-bottom:16px}
+.guide-body h3{font-size:18px; margin:22px 0 8px; color:var(--teal-dark)}
+.guide-body h3:first-child{margin-top:2px}
+.guide-body p,.guide-body li{color:#2A3833}
+.guide-body ul,.guide-body ol{padding-left:22px}
+.guide-body li{margin-bottom:6px}
+
+/* ---------- profile ---------- */
+.fact-list{list-style:none; padding:0; margin:0}
+.fact-list li{padding:7px 0; border-bottom:1px solid var(--soft)}
+.fact-list li:last-child{border-bottom:none}
+@media (min-width:560px){ .summary-grid{grid-template-columns:repeat(4,1fr)} }

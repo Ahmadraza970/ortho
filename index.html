@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ortho — Tumhara Health Saathi</title>
+<meta name="description" content="Ortho — Ahmad ka personal health saathi. Roz ka sinus check-in, record, doctors aur sinus guide. Sirf jankari — diagnosis nahi.">
+<meta name="theme-color" content="#0B6E4F">
+<meta property="og:title" content="Ortho — Tumhara Health Saathi">
+<meta property="og:description" content="Roz ka check-in, pattern record, ENT doctors aur sinus guide — ek saaf, shant app me.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="/og-image.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<section id="loginView" class="login-view" hidden>
+  <div class="login-card">
+    <img class="login-logo" src="/icons/icon-192.png" alt="Ortho logo" width="84" height="84">
+    <h1>Ortho</h1>
+    <p class="login-sub">Tumhara health saathi 🌿<br>Roz ka check-in, record aur doctor ki taiyaari — sab ek jagah.</p>
+    <form id="magicForm" class="magic-form">
+      <label for="emailInput">Apna email likho</label>
+      <input id="emailInput" type="email" inputmode="email" autocomplete="email" placeholder="name@example.com" required>
+      <button type="submit" class="btn-primary" id="magicBtn">Login link bhejo</button>
+    </form>
+    <p id="magicMsg" class="form-msg" role="status"></p>
+    <p class="login-note">Email par ek link aayega — use kholo, seedha andar. Password ki koi tension nahi.<br><br>
+    🔒 Privacy: tumhara data sirf tumhare apne account me rehta hai. Koi aur use dekh nahi sakta.</p>
+  </div>
+</section>
+
+<!-- ============ APP ============ -->
+<div id="appView" hidden>
+  <header class="app-header">
+    <div class="brand">
+      <img src="/icons/icon-192.png" alt="" width="34" height="34">
+      <span>Ortho</span>
+    </div>
+    <span class="header-tag">health saathi 🌿</span>
+  </header>
+
+  <main id="mainEl">
+
+    <!-- ===== CHAT ===== -->
+    <section class="tab-page" id="page-chat" data-page="chat">
+      <div id="chatLog" class="chat-log" aria-live="polite"></div>
+      <div id="chatChips" class="chat-chips"></div>
+      <div class="chat-input-row">
+        <input id="chatText" type="text" placeholder="Note likhna ho to yahan…" autocomplete="off">
+        <button id="chatSend" class="btn-send" aria-label="Bhejo">➤</button>
+      </div>
+      <p class="chat-hint">Ortho ek guided check-in saathi hai — sawal wahi, jawab tumhare tap par. Asli salah ke liye hamesha doctor.</p>
+    </section>
+
+    <!-- ===== CHECK-IN FORM ===== -->
+    <section class="tab-page" id="page-checkin" data-page="checkin" hidden>
+      <h2 class="page-title" id="checkinTitle">Aaj ka check-in</h2>
+      <form id="checkinForm" class="card form-card">
+        <div class="field">
+          <label for="fDate">Tareekh</label>
+          <input id="fDate" type="date" required>
+        </div>
+        <div class="field">
+          <span class="field-label">Neend kaisi thi?</span>
+          <div class="chip-row" id="sleepChips" role="radiogroup" aria-label="Neend">
+            <button type="button" class="chip" data-val="achhi">Achhi 😴</button>
+            <button type="button" class="chip" data-val="beech">Beech wali</button>
+            <button type="button" class="chip" data-val="kharab">Kharab 😖</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="fNose">Naak band — <b><span id="noseVal">0</span>/10</b></label>
+          <input id="fNose" type="range" min="0" max="10" step="1" value="0" class="slider">
+          <div class="slider-scale"><span>0 · bilkul khuli</span><span>10 · poori band</span></div>
+        </div>
+        <div class="field">
+          <label for="fHead">Sar dard — <b><span id="headVal">0</span>/10</b></label>
+          <input id="fHead" type="range" min="0" max="10" step="1" value="0" class="slider">
+          <div class="slider-scale"><span>0 · bilkul nahi</span><span>10 · sabse tez</span></div>
+        </div>
+        <div class="field">
+          <label for="fStudy">Padhai par asar</label>
+          <select id="fStudy">
+            <option value="">— chuno —</option>
+            <option value="koi_nahi">Koi asar nahi</option>
+            <option value="thoda">Thoda asar pada</option>
+            <option value="zyada">Zyada asar pada</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="fNote">Chhota note <span class="opt">(agar chaho)</span></label>
+          <textarea id="fNote" rows="2" placeholder="Jaise: raat ko thandi hawa lagi…"></textarea>
+        </div>
+        <button type="submit" class="btn-primary" id="saveCheckinBtn">Save karo</button>
+        <p id="checkinMsg" class="form-msg" role="status"></p>
+      </form>
+    </section>
+
+    <!-- ===== RECORD ===== -->
+    <section class="tab-page" id="page-record" data-page="record" hidden>
+      <h2 class="page-title">Mera record</h2>
+      <div id="recordSummary" class="summary-grid"></div>
+      <div class="card chart-card" id="chartCard" hidden>
+        <h3>Pattern — naak band aur sar dard</h3>
+        <div id="chartWrap"></div>
+        <div class="chart-legend"><span class="lg lg-nose">— Naak band</span><span class="lg lg-head">— Sar dard</span></div>
+      </div>
+      <div id="historyList" class="history-list"></div>
+    </section>
+
+    <!-- ===== DOCTORS ===== -->
+    <section class="tab-page" id="page-doctors" data-page="doctors" hidden>
+      <h2 class="page-title">Mere doctors (ENT)</h2>
+      <p class="page-sub">Final faisla hamesha ghar walon ke saath. Number par tap karne se call lagegi.</p>
+      <div id="doctorList" class="doctor-list"></div>
+      <form id="doctorForm" class="card form-card">
+        <h3>Apna doctor jodo</h3>
+        <div class="field"><label for="dName">Doctor ka naam</label><input id="dName" type="text" required placeholder="Dr. …"></div>
+        <div class="field"><label for="dDetail">Degree / detail <span class="opt">(agar chaho)</span></label><input id="dDetail" type="text" placeholder="MS-ENT, 10 saal tajurba…"></div>
+        <div class="field"><label for="dPlace">Jagah</label><input id="dPlace" type="text" placeholder="Clinic / hospital, shahar"></div>
+        <div class="field"><label for="dPhone">Phone</label><input id="dPhone" type="tel" inputmode="tel" placeholder="+91 …"></div>
+        <div class="field"><label for="dNote">Note <span class="opt">(agar chaho)</span></label><input id="dNote" type="text" placeholder="Timing, fees…"></div>
+        <button type="submit" class="btn-primary">Doctor jodo</button>
+        <p id="doctorMsg" class="form-msg" role="status"></p>
+      </form>
+    </section>
+
+    <!-- ===== GUIDE ===== -->
+    <section class="tab-page" id="page-guide" data-page="guide" hidden>
+      <h2 class="page-title">Sinus guide</h2>
+      <div class="seema-box">📖 Ye sirf <b>general jankari</b> hai — diagnosis nahi. Tumhare case me doctor ki salah hi final hai.</div>
+      <article class="guide-body" id="guideBody"></article>
+      <div class="seema-box">Ek seema phir se: Ortho jankari aur record ka saathi hai. Dawa shuru/badli/band karna — ye sirf doctor ka kaam hai.</div>
+    </section>
+
+    <!-- ===== PROFILE ===== -->
+    <section class="tab-page" id="page-profile" data-page="profile" hidden>
+      <h2 class="page-title">Meri jaankari</h2>
+      <div class="card">
+        <h3>Meri takleef</h3>
+        <ul class="fact-list">
+          <li><b>Takleef:</b> Allergic sinusitis</li>
+          <li><b>Kab se:</b> Lagbhag 1.5 saal se</li>
+          <li><b>Pehle ka ilaaz:</b> Spray + dawa karwaya tha — theek nahi hua</li>
+          <li><b>Abhi ki dawa:</b> Koi dawa nahi chal rahi</li>
+          <li><b>Agla kadam:</b> Achhe ENT doctor ki talaash jaari hai</li>
+          <li><b>Lakshan:</b> Bar-bar sardi, band naak, sar dard — padhai par asar padta hai</li>
+        </ul>
+      </div>
+      <form id="profileForm" class="card form-card">
+        <h3>Apni jaankari badlo</h3>
+        <div class="field"><label for="pMed">Abhi ki dawa ka naam <span class="opt">(doctor de to likhna)</span></label><input id="pMed" type="text" placeholder="Abhi koi dawa nahi"></div>
+        <div class="field"><label for="pMedTime">Dawa ka time</label><input id="pMedTime" type="text" placeholder="Jaise: subah 8 baje, raat 9 baje"></div>
+        <div class="field"><label for="pNote">Apni note</label><textarea id="pNote" rows="3" placeholder="Jo yaad rakhna ho…"></textarea></div>
+        <button type="submit" class="btn-primary">Save karo</button>
+        <p id="profileMsg" class="form-msg" role="status"></p>
+      </form>
+      <div class="card">
+        <h3>🔔 Notifications</h3>
+        <p class="card-text">Roz subah check-in ki yaad — seedha tumhare phone par, Muse jaise pyaar bhare words me.</p>
+        <button id="pushBtn" class="btn-primary" type="button">Notifications ON karo</button>
+        <p id="pushMsg" class="form-msg" role="status"></p>
+        <p class="card-text small">WhatsApp wala subah ka check-in waise hi chalta rahega — ye uske upar ek aur sahulat hai, badlaav nahi.</p>
+      </div>
+      <div class="card">
+        <h3>🔒 Privacy</h3>
+        <p class="card-text">Tumhara saara data sirf tumhare apne account me rehta hai. Bina login ke koi kuch dekh nahi sakta, aur tum apna har record khud badal ya mita sakte ho.</p>
+        <button id="logoutBtn" class="btn-ghost" type="button">Logout</button>
+        <p class="card-text small" id="userEmailLine"></p>
+      </div>
+      <footer class="app-footer">Made by Ahmad · <a href="https://ahmadrazaa.me" target="_blank" rel="noopener">ahmadrazaa.me</a></footer>
+    </section>
+  </main>
+
+  <!-- ===== BOTTOM NAV ===== -->
+  <nav class="tabbar" aria-label="Main">
+    <button class="tab-btn active" data-tab="chat"><span class="tab-ic">💬</span><span>Chat</span></button>
+    <button class="tab-btn" data-tab="checkin"><span class="tab-ic">✅</span><span>Check-in</span></button>
+    <button class="tab-btn" data-tab="record"><span class="tab-ic">📈</span><span>Record</span></button>
+    <button class="tab-btn" data-tab="doctors"><span class="tab-ic">🩺</span><span>Doctors</span></button>
+    <button class="tab-btn" data-tab="guide"><span class="tab-ic">📖</span><span>Guide</span></button>
+    <button class="tab-btn" data-tab="profile"><span class="tab-ic">👤</span><span>Profile</span></button>
+  </nav>
+</div>
+
+<script src="/config.js"></script>
+<script src="/guide-content.js"></script>
+<script type="module" src="/app.js"></script>
+</body>
+</html>
