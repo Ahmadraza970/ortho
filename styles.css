@@ -90,10 +90,9 @@ main{max-width:640px; margin:0 auto; padding:18px 16px 110px}
 /* ---------- chat ---------- */
 .chat-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px}
 .chat-head-title{font-weight:700; font-size:17px}
-.chat-clear-btn{background:none; border:none; font-size:16px; line-height:1; padding:6px 8px; min-height:32px;
-  border-radius:8px; opacity:.45}
-.chat-clear-btn:hover{opacity:.85}
-.chat-clear-btn:active{opacity:1; background:var(--soft)}
+.chat-clear-btn{opacity:.75}
+.chat-clear-btn:hover{opacity:1}
+.chat-clear-btn:active{opacity:1}
 .chat-log{display:flex; flex-direction:column; gap:10px; padding-bottom:8px}
 .msg{max-width:86%; padding:12px 15px; border-radius:18px; white-space:pre-wrap; word-break:break-word}
 .msg.bot{background:var(--soft); border:1px solid var(--line); align-self:flex-start; border-bottom-left-radius:6px}
