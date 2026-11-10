@@ -44,6 +44,11 @@ input,select,textarea{font:inherit; color:var(--ink)}
   border:1.5px solid var(--line); color:#4285F4; font-weight:800; font-size:15px; flex:none; background:#fff}
 .form-msg{min-height:22px; color:var(--teal-dark); font-size:14px; margin:10px 0 0}
 .form-msg.err{color:var(--red)}
+.otp-toggle{display:block; margin:8px auto 0; background:none; border:none; color:var(--teal); font-size:14px; font-weight:600; text-decoration:underline; padding:6px 10px; min-height:36px}
+.otp-hint{color:var(--muted); font-size:14px; margin:10px 0 0}
+.otp-row{margin-top:10px}
+.otp-row input{width:100%; padding:14px 16px; border:1.5px solid var(--line); border-radius:14px; margin-bottom:10px; background:#fff; text-align:center; font-size:19px; letter-spacing:5px}
+.otp-row input:focus{outline:2px solid var(--teal); outline-offset:1px; border-color:var(--teal)}
 
 /* ---------- app frame ---------- */
 .app-header{position:sticky; top:0; z-index:5; display:flex; align-items:center; justify-content:space-between;
@@ -83,6 +88,12 @@ main{max-width:640px; margin:0 auto; padding:18px 16px 110px}
 .slider-scale{display:flex; justify-content:space-between; color:var(--muted); font-size:12px; margin-top:-4px}
 
 /* ---------- chat ---------- */
+.chat-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px}
+.chat-head-title{font-weight:700; font-size:17px}
+.chat-clear-btn{background:none; border:none; font-size:16px; line-height:1; padding:6px 8px; min-height:32px;
+  border-radius:8px; opacity:.45}
+.chat-clear-btn:hover{opacity:.85}
+.chat-clear-btn:active{opacity:1; background:var(--soft)}
 .chat-log{display:flex; flex-direction:column; gap:10px; padding-bottom:8px}
 .msg{max-width:86%; padding:12px 15px; border-radius:18px; white-space:pre-wrap; word-break:break-word}
 .msg.bot{background:var(--soft); border:1px solid var(--line); align-self:flex-start; border-bottom-left-radius:6px}

@@ -41,6 +41,12 @@
         <button type="submit" class="btn-primary" id="magicBtn">Login link bhejo</button>
       </form>
       <p id="magicMsg" class="form-msg" role="status"></p>
+      <p id="otpHint" class="otp-hint" hidden>Email me ek 6 number ka code bhi aaya hoga — chaaho to wo code yaha daal kar turant login kar lo.</p>
+      <button type="button" id="otpToggle" class="otp-toggle">Email wala code use karna hai?</button>
+      <div id="otpRow" class="otp-row" hidden>
+        <input id="otpInput" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 number ka code" aria-label="Email wala 6 number ka code">
+        <button type="button" class="btn-primary" id="otpBtn">Code se login karo</button>
+      </div>
       <div class="login-or"><span>ya</span></div>
       <button type="button" class="btn-google" id="googleBtn"><span class="g-mark" aria-hidden="true">G</span>Google se login karo</button>
       <p class="login-note">Email par ek link aayega — use kholo, seedha andar. Password ki koi tension nahi.<br>
@@ -50,6 +56,10 @@
 
     <!-- ===== CHAT ===== -->
     <section class="tab-page" id="page-chat" data-page="chat">
+      <div class="chat-head">
+        <span class="chat-head-title">💬 Ortho se baat</span>
+        <button id="chatClearBtn" class="chat-clear-btn" type="button" aria-label="Chat saaf karo" title="Chat saaf karo">🧹</button>
+      </div>
       <div id="chatLog" class="chat-log" aria-live="polite"></div>
       <div id="chatChips" class="chat-chips"></div>
       <div class="chat-input-row">
@@ -192,6 +202,7 @@
       <div class="card">
         <h3>🔒 Privacy</h3>
         <p class="card-text">Tumhara saara data sirf tumhare apne account me rehta hai. Bina login ke koi kuch dekh nahi sakta, aur tum apna har record khud badal ya mita sakte ho.</p>
+        <p class="card-text small">Chat history sirf tumhare account me save hoti hai — Chat tab ke 🧹 button se kabhi bhi saaf kar sakte ho.</p>
         <button id="logoutBtn" class="btn-ghost" type="button">Logout</button>
         <p class="card-text small" id="userEmailLine"></p>
       </div>

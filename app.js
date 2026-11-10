@@ -87,7 +87,7 @@ async function setUser(user) {
     if (lastUid !== user.id) { lastUid = user.id; await afterLogin(); }
   } else {
     lastUid = null;
-    if (!chatWelcomed) { chatWelcomed = true; chatWelcome(); }
+    if (!chatWelcomed) { chatWelcomed = true; restoreChatHistory(); chatWelcome(); }
   }
 }
 
@@ -126,7 +126,9 @@ async function afterLogin() {
   if (fresh?.user) { currentUser = fresh.user; renderGoogleLink(fresh.user); }
   await ensureSeedCheckin();
   await mergeLocalCheckin();
+  await migrateLocalChatHistory();
   await loadEverything();
+  await restoreChatHistory();
   if (!seeded) { seeded = true; startChat(true); }
 }
 
@@ -172,8 +174,55 @@ $('#magicForm').addEventListener('submit', async (e) => {
   });
   btn.disabled = false; btn.textContent = 'Login link bhejo';
   if (error) msg($('#magicMsg'), 'Link nahi gaya — email phir se check karke try karo.', true);
-  else msg($('#magicMsg'), '✅ Link bhej diya hai! Apna email kholo aur link par tap karo.');
+  else {
+    msg($('#magicMsg'), '✅ Link bhej diya hai! Apna email kholo aur link par tap karo.');
+    // Usi email me 6 number ka code bhi aata hai — link scan ho jaye to code se
+    // turant login ho sakta hai; hint dikhao aur code wali row khud khol do.
+    $('#otpHint').hidden = false;
+    revealOtpRow();
+  }
 });
+
+/* ================= EMAIL OTP CODE LOGIN =================
+   Kuch inbox (jaise Zoho Mail) aaney wale link ko khud scan karke single-use
+   token kha lete hain — isiliye link kabhi-kabhi "purana" ho jata hai. 6 number
+   ka code scan nahi ho sakta; wo code UPAR wale signInWithOtp se gayi email me
+   hi aata hai (Supabase Magic Link template me {{ .Token }}). Yaha koi alag
+   send nahi hai — sirf verify. Safal verify par session banta hai aur init()
+   wala onAuthStateChange -> setUser -> afterLogin poora login khud sambhal
+   leta hai; isiliye success par yaha kuch extra nahi karna. */
+function cleanOtpCode(raw) {
+  const digits = String(raw ?? '').replace(/\D/g, '');
+  return digits.length === 6 ? digits : null;
+}
+
+function revealOtpRow() {
+  $('#otpRow').hidden = false;
+  $('#otpToggle').hidden = true;
+}
+
+$('#otpToggle').addEventListener('click', revealOtpRow);
+$('#otpInput').addEventListener('input', (e) => {
+  e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
+});
+$('#otpInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); loginWithCode(); }
+});
+
+async function loginWithCode() {
+  const email = $('#emailInput').value.trim();
+  if (!email) { msg($('#magicMsg'), 'Pehle upar email daalo 🌿', true); $('#emailInput').focus(); return; }
+  const code = cleanOtpCode($('#otpInput').value);
+  if (!code) { msg($('#magicMsg'), 'Code 6 number ka hona chahiye — email wala code phir se daalo.', true); return; }
+  const btn = $('#otpBtn');
+  btn.disabled = true; btn.textContent = 'Rukho…';
+  const { error } = await supabase.auth.verifyOtp({ email, token: code, type: 'email' });
+  btn.disabled = false; btn.textContent = 'Code se login karo';
+  if (error) msg($('#magicMsg'), 'Code galat ya purana hai — email wala sabse naya code daalo', true);
+  // Safal: onAuthStateChange khud setUser/afterLogin chala dega.
+}
+
+$('#otpBtn').addEventListener('click', loginWithCode);
 
 /* Google sign-in (OAuth). Safal ho to browser Google ki taraf redirect ho jata hai —
    wapas aane par session detectSessionInUrl se khud mil jata hai. Kuch bhi fail ho
@@ -195,7 +244,7 @@ $('#googleBtn').addEventListener('click', async () => {
 
 $('#logoutBtn').addEventListener('click', async () => {
   await supabase.auth.signOut();
-  checkins = []; doctors = []; profileData = null; seeded = false; chatWelcomed = false; draft = {}; chatState = 'idle'; flowDate = null; flowNagged = false; pendingPhoto = null;
+  checkins = []; doctors = []; profileData = null; seeded = false; chatWelcomed = false; draft = {}; chatState = 'idle'; flowDate = null; flowNagged = false; pendingPhoto = null; chatRestored = false; restoredInDom = false; chatTouched = false;
   chatLog.innerHTML = ''; chatChips.innerHTML = '';
   setUser(null);
 });
@@ -529,12 +578,15 @@ function renderBotHTML(text) {
   // Bot/model output untrusted hai: pehle HTML escape, phir sirf chhota sa markdown.
   const escaped = escapeHtml(String(text ?? ''));
   return escaped.split(/\r?\n/).map((line) => {
-    let out = line.replace(/^[-*]\s+/, '• ');
+    // Markdown blockquote ka agla "> " hata do — escape ke baad wo "&gt; " banta hai,
+    // bina hataye bubble me kachra ">" dikhta tha. Baaki escape-first suraksha waisi hi.
+    let out = line.replace(/^\s*&gt;\s+/, '').replace(/^&gt;$/, '');
+    out = out.replace(/^[-*]\s+/, '• ');
     out = out.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
     return out;
   }).join('<br>');
 }
-function botSay(text, delay = 300) {
+function botSay(text, delay = 300, opts = {}) {
   return new Promise((res) => setTimeout(() => {
     const div = document.createElement('div');
     div.className = 'msg bot'; div.innerHTML = renderBotHTML(text);
@@ -542,6 +594,8 @@ function botSay(text, delay = 300) {
     // taaki bubble ke andar ke feedback buttons (👍/👎) history me na ghusein.
     div.dataset.rawText = String(text ?? '');
     chatLog.appendChild(div);
+    // Chat history me save — opts.skipPersist sirf static greeting/welcome lines ke liye
+    if (!opts.skipPersist) persistChatMessage('bot', div.dataset.rawText);
     addFeedbackRow(div);
     scrollChat(); res();
   }, delay));
@@ -549,7 +603,9 @@ function botSay(text, delay = 300) {
 function meSay(text) {
   const div = document.createElement('div');
   div.className = 'msg me'; div.textContent = text;
-  chatLog.appendChild(div); scrollChat();
+  chatLog.appendChild(div);
+  persistChatMessage('user', text);
+  scrollChat();
 }
 
 /* ---------- FEEDBACK (👍/👎 — improvement loop) ----------
@@ -611,8 +667,12 @@ const numChips = (cb) => setChips(
   (it) => { meSay(String(it.val)); cb(it.val); }, true);
 
 async function startChat(first = false) {
-  chatLog.innerHTML = ''; chatChips.innerHTML = ''; draft = {}; flowDate = null; flowNagged = false;
-  await botSay('Assalamualaikum Ahmad 🌤️ Main Ortho — tumhara health saathi.', first ? 150 : 100);
+  // Restore ki hui history pehle start par bani rehti hai — greeting uske NEECHE judta
+  // hai. Baad ke restarts (jaise "check-in" trigger) par log hamesha ki tarah saaf hota hai.
+  if (!(first && restoredInDom)) chatLog.innerHTML = '';
+  restoredInDom = false;
+  chatChips.innerHTML = ''; draft = {}; flowDate = null; flowNagged = false;
+  await botSay('Assalamualaikum Ahmad 🌤️ Main Ortho — tumhara health saathi.', first ? 150 : 100, { skipPersist: true });
   // Din me ek hi check-in: aaj ka poora ho chuka ho to koi flow/options nahi —
   // sirf ek line me aaj ka haal, bas.
   if (checkinDoneToday()) {
@@ -722,8 +782,10 @@ $('#chatSend').addEventListener('click', sendChatText);
 $('#chatText').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChatText(); });
 
 async function chatWelcome() {
-  await botSay('Assalamualaikum Ahmad 🌤️ Main Ortho — tumhara health saathi.', 150);
-  await botSay('Main ye kar sakta hun:\n• "check-in" likho — aaj ka record (neend, naak band, sar dard)\n• 📖 Guide tab — sinus ki seedhi, saaf jankari\n• 🩺 Doctors tab — tumhare 3 ENT doctors, tap karke call\nAsli sawal-jawab ke liye Zara se WhatsApp par baat karna — wahan sawal pehle puchh kar samjhaya jata hai. Yahan bas likh do ya options tap kar do 🌿');
+  // Welcome lines static hain — history me save NAHI hoti, warna har session me
+  // restore ke upar dobara-tibara judti jayengi.
+  await botSay('Assalamualaikum Ahmad 🌤️ Main Ortho — tumhara health saathi.', 150, { skipPersist: true });
+  await botSay('Main ye kar sakta hun:\n• "check-in" likho — aaj ka record (neend, naak band, sar dard)\n• 📖 Guide tab — sinus ki seedhi, saaf jankari\n• 🩺 Doctors tab — tumhare 3 ENT doctors, tap karke call\nAsli sawal-jawab ke liye Zara se WhatsApp par baat karna — wahan sawal pehle puchh kar samjhaya jata hai. Yahan bas likh do ya options tap kar do 🌿', 300, { skipPersist: true });
 }
 
 const FALLBACKS = [
@@ -744,8 +806,8 @@ function nextFallback() {
    dawai likh do/suggest karo, prescription. Jaankari wale sawal ("Glynaze konsi dawa h",
    "Torex kya karti h", "X ke baare me batao") isse match NAHI hone chahiye — wo brain ke hain.
    MED_INFO_RE — dawai-ish shabd; logged-out jaankari sawal ko login ki taraf bhejne ke liye. */
-const MED_RX_RE = /(dawai|dawa|dava|goli|tablet|medicine|spray)\s+(lu|loon|khaun|khau|kha lu|le lu|lena chahiye|leni chahiye|khani chahiye|le sakta|le sakti|kha sakta|kha sakti)\b|\b(dose|dosage|khurak)\b|kitne\s*(mg|ml|gram)\b|kab\s+tak\s+[^.?!]{0,24}\b(lu|loon|khaun|khana|lena|leni)\b|dawai\s+(likh|suggest|prescribe)|prescription|mujhe\s+dawai|mere\s+liye\s+dawai/;
-const MED_INFO_RE = /(dawai|dwaai|dvaai|dawa|dava|tablet|goli|medicine|capsule|syrup|injection|ointment|cream|spray)|kya\s+(kaam|karti|karta)\b|ke\s+baare\s+me/;
+const MED_RX_RE = /(dawai|dawa|dava|goli|tablet|medicine|spray)\s+(lu|loon|lun|lo|khaun|khau|kha lu|kha lo|le lu|le lo|lena chahiye|leni chahiye|khani chahiye|le sakta|le sakti|kha sakta|kha sakti)\b|\b(dose|dosage|khurak)\b|kitn[ei]\s*(mg|ml|gram)\b|kab\s+tak\s+[^.?!]{0,24}\b(lu|loon|lun|khaun|khau|khana|khaana|lena|leni)\b|dawai\s+(likh|suggest|prescribe|batao)\b|prescription|mujhe\s+dawai|mere\s+liye\s+dawai/;
+const MED_INFO_RE = /(dawai|dwaai|dvaai|dawa|dava|tablet|goli|medicine|capsule|syrup|injection|ointment|cream|spray)|(kya|kis)\s+(kaam|karti|karta|liye)\b|ke\s+baare\s+me|(ka|ki|ke)\s+(use|istemal|jankari|jaankari)\b|kya\s+hai\b/;
 
 /* AI brain — local intent na mile to ortho-chat Edge Function (sirf logged-in user ke liye).
    Function ka contract: body { messages: [{ role, content }] } -> { reply, model }.
@@ -808,7 +870,11 @@ function meSayPhoto(dataUrl) {
   img.alt = 'Dawai ki photo';
   img.style.cssText = 'max-width:180px;max-height:240px;border-radius:10px;display:block';
   div.appendChild(img);
-  chatLog.appendChild(div); scrollChat();
+  chatLog.appendChild(div);
+  // Photo ka data-URL history me NAHI rakha jata (bahut bada hota hai) — sirf ek
+  // chhota nishan, taaki restore hui baat-cheet ka silsila samajh aata rahe.
+  persistChatMessage('user', '📷 Dawai ki photo');
+  scrollChat();
 }
 
 function downscaleImageFile(file) {
@@ -883,6 +949,7 @@ $('#chatPhoto').addEventListener('change', async (e) => {
   const file = e.target.files && e.target.files[0];
   e.target.value = '';
   if (!file) return;
+  chatTouched = true;
   let dataUrl;
   try {
     dataUrl = await downscaleImageFile(file);
@@ -922,6 +989,7 @@ async function sendChatText() {
   const raw = inp.value.trim();
   if (!raw) return;
   inp.value = '';
+  chatTouched = true; // user is session me bol chuka hai — ab restore dobara render nahi karega
   const t = raw.toLowerCase();
   const norm = t.replace(/[\s\-_]+/g, '');
 
@@ -1135,5 +1203,135 @@ async function sendChatText() {
   }
   await botSay(nextFallback());
 }
+
+/* ================= CHAT HISTORY (save + restore + 🧹 clear) =================
+   Har chat message save hota hai taaki app dobara kholne par pichli baat wapas dikhe:
+   - Logged-in: Supabase `chat_messages` table (sirf apni rows; RLS). Table abhi
+     dashboard se apply hona baaki ho to insert/select chup-chaap fail hote hain —
+     chat kabhi nahi rukti, bas history us samay save/restore nahi hoti.
+   - Logged-out: sirf is device par, localStorage `ortho_local_chat_v1` (aakhri 60).
+   Restore session me EK hi baar hota hai, greeting/startChat se PEHLE, aur
+   restored bot messages par feedback (👍/👎) row NAHI lagti — wo sirf live
+   jawabon ke liye hai. */
+const LOCAL_CHAT_KEY = 'ortho_local_chat_v1';
+const CHAT_HISTORY_MAX = 60;
+let chatRestored = false;  // is session me restore ho chuka (dobara render nahi hoga)
+let restoredInDom = false; // restore ne DOM me kuch render kiya — pehla startChat use mitayega nahi
+let chatTouched = false;   // user is session me kuch bol/bhej chuka hai — ab restore nahi hoga
+
+function capChatHistory(arr) { return arr.slice(-CHAT_HISTORY_MAX); }
+function sortChatOldestFirst(rows) { return [...rows].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); }
+function parseLocalChat(raw) {
+  try {
+    const a = JSON.parse(raw || '[]');
+    return Array.isArray(a) ? a.filter((m) => m && (m.role === 'user' || m.role === 'bot') && typeof m.text === 'string') : [];
+  } catch { return []; }
+}
+function loadLocalChat() {
+  try { return parseLocalChat(localStorage.getItem(LOCAL_CHAT_KEY)); } catch { return []; }
+}
+function saveLocalChat(arr) {
+  try { localStorage.setItem(LOCAL_CHAT_KEY, JSON.stringify(capChatHistory(arr))); } catch {}
+}
+
+/* botSay/meSay ke choke point se bula jata hai. Har failure SILENT hai —
+   persistence kabhi chat ko rok ya error-dikha nahi sakti. */
+function persistChatMessage(role, text) {
+  try {
+    const clean = String(text ?? '').trim();
+    if (!clean) return;
+    if (currentUser) {
+      const p = supabase.from('chat_messages').insert({ user_id: currentUser.id, role, text: clean });
+      if (p && typeof p.then === 'function') p.then(() => {}, () => {});
+    } else {
+      const arr = loadLocalChat();
+      arr.push({ role, text: clean });
+      saveLocalChat(arr);
+    }
+  } catch { /* save na ho paye to bhi chat chalti rahegi */ }
+}
+
+/* Restored message — feedback row NAHI, intents/brain bilkul nahi; bot ke liye
+   renderBotHTML + dataset.rawText taaki chatHistoryForAI sahi kaam kare. */
+function renderRestoredMessage(m) {
+  const div = document.createElement('div');
+  if (m.role === 'user') {
+    div.className = 'msg me';
+    div.textContent = m.text;
+  } else {
+    div.className = 'msg bot';
+    div.innerHTML = renderBotHTML(m.text);
+    div.dataset.rawText = m.text;
+  }
+  chatLog.appendChild(div);
+}
+
+async function restoreChatHistory() {
+  if (chatRestored || chatTouched) return;
+  chatRestored = true;
+  let rows = [];
+  if (currentUser) {
+    try {
+      const { data, error } = await supabase.from('chat_messages')
+        .select('role, text, created_at')
+        .order('created_at', { ascending: false })
+        .limit(CHAT_HISTORY_MAX);
+      if (!error && data) rows = sortChatOldestFirst(data);
+    } catch { rows = []; }
+  } else {
+    rows = loadLocalChat();
+  }
+  // Fetch ke dauraan user kuch bol chuka ho to ab render mat karo — baat-cheet bikhar jayegi
+  if (chatTouched || !rows.length) return;
+  rows.forEach(renderRestoredMessage);
+  restoredInDom = true;
+  scrollChat();
+}
+
+/* Login par: device-local history account me le jao — SIRF tab jab account ki
+   history abhi khaali ho. Account me pehle se history ho to wahi jeet ti hai,
+   sirf local copy hat jati hai. Migrated rows ka order banaye rakhne ke liye
+   created_at me 1-1 second ka antar rakha hai. */
+async function migrateLocalChatHistory() {
+  if (!currentUser) return;
+  const local = loadLocalChat();
+  if (!local.length) return;
+  try {
+    const { data, error } = await supabase.from('chat_messages').select('id').limit(1);
+    if (error) return; // table abhi na bani ho to local bana rahe — agle login par phir koshish
+    if (data && data.length) {
+      try { localStorage.removeItem(LOCAL_CHAT_KEY); } catch {}
+      return;
+    }
+    const base = Date.now();
+    const rows = local.map((m, i) => ({
+      user_id: currentUser.id, role: m.role, text: m.text,
+      created_at: new Date(base + i * 1000).toISOString()
+    }));
+    const { error: insErr } = await supabase.from('chat_messages').insert(rows);
+    if (!insErr) { try { localStorage.removeItem(LOCAL_CHAT_KEY); } catch {} }
+  } catch { /* migration fail ho to local history device par bani rehti hai */ }
+}
+
+/* 🧹 Chat saaf — pehle confirm, phir account/device se delete, phir taaza start.
+   startChat aaj ka check-in DONE ho to khud sirf summary line dikhata hai. */
+async function clearChatHistory() {
+  if (!confirm('Puri chat saaf kar dun? Ye wapas nahi aayegi.')) return;
+  try {
+    if (currentUser) {
+      const { error } = await supabase.from('chat_messages').delete().eq('user_id', currentUser.id);
+      if (error) throw error;
+    } else {
+      try { localStorage.removeItem(LOCAL_CHAT_KEY); } catch {}
+    }
+  } catch {
+    await botSay('Chat saaf nahi ho payi 😔 Net check karke phir try karo.', 150, { skipPersist: true });
+    return;
+  }
+  pendingPhoto = null;
+  chatRestored = true; restoredInDom = false;
+  startChat();
+}
+$('#chatClearBtn').addEventListener('click', clearChatHistory);
 
 init();
