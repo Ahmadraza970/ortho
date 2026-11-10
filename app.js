@@ -1375,9 +1375,10 @@ async function clearChatHistory() {
     if (currentUser) {
       const { error } = await supabase.from('chat_messages').delete().eq('user_id', currentUser.id);
       if (error) throw error;
-    } else {
-      try { localStorage.removeItem(LOCAL_CHAT_KEY); } catch {}
     }
+    // Device wali copy bhi hamesha saaf — login ho ya na ho, warna purani
+    // local history logout ke baad wapas aa sakti thi. FULL clean = dono.
+    try { localStorage.removeItem(LOCAL_CHAT_KEY); } catch {}
   } catch {
     await botSay('Chat saaf nahi ho payi 😔 Net check karke phir try karo.', 150, { skipPersist: true });
     return;
