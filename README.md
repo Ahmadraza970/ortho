@@ -6,20 +6,18 @@
 
 **Roz ka sinus check-in, health record, AI se sawal-jawab, photo se dawai ki pehchan, ENT doctors aur sinus guide — ek saaf, shant app me.**
 
-![Live](https://img.shields.io/badge/Live-orthodoctorr.vercel.app-0B6E4F?style=flat-square)
+![Live](https://img.shields.io/badge/Status-Live-0B6E4F?style=flat-square)
 ![Android APK](https://img.shields.io/badge/Android-APK%20download-3DDC84?style=flat-square)
 ![PWA](https://img.shields.io/badge/PWA-installable-0B6E4F?style=flat-square)
 ![Backend](https://img.shields.io/badge/Backend-Supabase-3ECF8E?style=flat-square)
 ![Hosting](https://img.shields.io/badge/Hosting-Vercel-000000?style=flat-square)
 ![Language](https://img.shields.io/badge/UI-Roman%20Hinglish-F59E0B?style=flat-square)
 
-### 🔗 Live Links
+### 🔗 Landing Page
 
-| Kya | Link |
-|---|---|
-| 🌐 **Web app** | https://orthodoctorr.vercel.app |
-| 📲 **Android app download page** | https://orthodoctorr.vercel.app/download.html |
-| 🤖 **APK (direct)** | https://orthodoctorr.vercel.app/ortho-app.apk |
+**📲 https://orthodoctorr.vercel.app/download.html**
+
+_Wahin se Android APK bhi mil jayega aur web version ka link bhi._
 
 </div>
 
