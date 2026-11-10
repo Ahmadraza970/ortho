@@ -876,7 +876,7 @@ async function askOrthoBrain(extraUserText) {
   let lastErr = new Error('ai-failed');
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 30000));
+      const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 60000));
       const call = supabase.functions.invoke('ortho-chat', { body: { messages } });
       const { data, error } = await Promise.race([call, timeout]);
       if (error || !data || typeof data.reply !== 'string' || !data.reply.trim()) throw new Error('ai-failed');
