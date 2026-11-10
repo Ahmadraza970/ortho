@@ -9,6 +9,23 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 
 let currentUser = null;
+
+// Login wale user ka pehla naam (Google account se) — greeting me sirf wahi
+// naam aayega jo user ka apna hai. Naam na mile to greeting bina naam ki.
+// (Ahmad ka naam hardcode tha — dusra koi install kare to use bhi "Ahmad"
+// dikhta tha. Bug pakda Ahmad ne khud, 2026-11-10.)
+function myFirstName() {
+  try {
+    const md = (currentUser && currentUser.user_metadata) || {};
+    const full = String(md.full_name || md.name || '').trim();
+    const first = full.split(/\s+/)[0] || '';
+    return /^[A-Za-zÀ-ɏ]{2,20}$/.test(first) ? first : '';
+  } catch { return ''; }
+}
+function greetingLine() {
+  const nm = myFirstName();
+  return `Assalamualaikum${nm ? ' ' + nm : ''} 🌤️ Main Ortho — tumhara health saathi.`;
+}
 let checkins = [];
 let doctors = [];
 let profileData = null;
@@ -709,7 +726,7 @@ async function startChat(first = false) {
   if (!(first && restoredInDom)) chatLog.innerHTML = '';
   restoredInDom = false;
   chatChips.innerHTML = ''; draft = {}; flowDate = null; flowNagged = false;
-  await botSay('Assalamualaikum Ahmad 🌤️ Main Ortho — tumhara health saathi.', first ? 150 : 100, { skipPersist: true });
+  await botSay(greetingLine(), first ? 150 : 100, { skipPersist: true });
   // Din me ek hi check-in: aaj ka poora ho chuka ho to koi flow/options nahi —
   // sirf ek line me aaj ka haal, bas.
   if (checkinDoneToday()) {
@@ -804,7 +821,7 @@ async function finishChat(noteText) {
 
 function tipFor(nose, head) {
   if (nose >= 8 || head >= 8) {
-    return '⚠️ Ahmad, ye number zyada hai. Guide ke khatre wale sanket yaad rakhna — aankh ke aas-paas soojan, tez bukhaar ya saans lene me dikkat ho to der bilkul mat karna: ghar par batao aur doctor ko dikhao.\nAaram ke liye: garam bhaap (steam) lo, aur saline (namak paani) se naak saaf karna madad karta hai.';
+    return '⚠️ Ye number zyada hai. Guide ke khatre wale sanket yaad rakhna — aankh ke aas-paas soojan, tez bukhaar ya saans lene me dikkat ho to der bilkul mat karna: ghar par batao aur doctor ko dikhao.\nAaram ke liye: garam bhaap (steam) lo, aur saline (namak paani) se naak saaf karna madad karta hai.';
   }
   if (nose >= 5) {
     return 'Naak kaafi band hai aaj 🤧 Sone se pehle bhaap (steam) ya saline rinse try karo, aur sir thoda uncha karke sona — raat ko band-pan kam lagega, neend gehri hogi to kal ki padhai bhi sambhalegi.';
@@ -821,7 +838,7 @@ $('#chatText').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendC
 async function chatWelcome() {
   // Welcome lines static hain — history me save NAHI hoti, warna har session me
   // restore ke upar dobara-tibara judti jayengi.
-  await botSay('Assalamualaikum Ahmad 🌤️ Main Ortho — tumhara health saathi.', 150, { skipPersist: true });
+  await botSay(greetingLine(), 150, { skipPersist: true });
   await botSay('Main ye kar sakta hun:\n• "check-in" likho — aaj ka record (neend, naak band, sar dard)\n• 📖 Guide tab — sinus ki seedhi, saaf jankari\n• 🩺 Doctors tab — tumhare 3 ENT doctors, tap karke call\nAsli sawal-jawab ke liye Zara se WhatsApp par baat karna — wahan sawal pehle puchh kar samjhaya jata hai. Yahan bas likh do ya options tap kar do 🌿', 300, { skipPersist: true });
 }
 
@@ -1171,7 +1188,7 @@ async function sendChatText() {
   }
 
   if (/^(assalamualaikum|hi+|hello|hey|namaste|salam|aoa)\b/.test(t)) {
-    await botSay('Namaste Ahmad 🌤️ Main theek hun, tum batao — aaj naak kaisi hai?\n"check-in" likho to record kar deta hun, ya Guide / Doctors tab dekh lo.' + flowNote);
+    await botSay('Namaste 🌤️ Main theek hun, tum batao — aaj naak kaisi hai?\n"check-in" likho to record kar deta hun, ya Guide / Doctors tab dekh lo.' + flowNote);
     return;
   }
   // Dawai ke sawal — pehle yahan ek bada catch-all tha jo har dawai-ish shabd par local
@@ -1183,7 +1200,7 @@ async function sendChatText() {
   // beech wale symptom/guide intents use na rok dein, isiliye brain yahin bulaya jata hai.
   // (c) logged-out jaankari sawal par login ki taraf — jaankari login ke baad AI se milti hai.
   if (MED_RX_RE.test(t) && !currentUser) {
-    await botSay('Dawai wala sawal samajh sakta hun, Ahmad — lekin iska jawab main nahi de sakta 🌿\nDawai ka faisla — kaunsi, kitni, kab tak — sirf doctor karte hain, kyunki wo tumhari naak dekh kar aur purani report samajh kar faisla lete hain. Galat dawai faayde ki jagah nuksaan kar sakti hai.\nTum ye kar sakte ho:\n• 🩺 Doctors tab — tumhare 3 ENT doctors hain, naam ke paas wale number se seedha call lag jayegi\n• 📖 Guide tab — sinus aur spray ke sahi tareeke ki general jankari\n• Asal sawal-jawab ke liye Zara se WhatsApp par baat karo — wahan main sawal pehle puchh kar samjhati hun.' + flowNote);
+    await botSay('Dawai wala sawal samajh sakta hun — lekin iska jawab main nahi de sakta 🌿\nDawai ka faisla — kaunsi, kitni, kab tak — sirf doctor karte hain, kyunki wo tumhari naak dekh kar aur purani report samajh kar faisla lete hain. Galat dawai faayde ki jagah nuksaan kar sakti hai.\nTum ye kar sakte ho:\n• 🩺 Doctors tab — tumhare 3 ENT doctors hain, naam ke paas wale number se seedha call lag jayegi\n• 📖 Guide tab — sinus aur spray ke sahi tareeke ki general jankari\n• Asal sawal-jawab ke liye Zara se WhatsApp par baat karo — wahan main sawal pehle puchh kar samjhati hun.' + flowNote);
     return;
   }
   if (MED_RX_RE.test(t) || MED_INFO_RE.test(t)) {
@@ -1209,7 +1226,7 @@ async function sendChatText() {
     return;
   }
   if (/(naak|band|sar dard|sardard|headache|sinus|zukam|cold|sardi|bukhaar|fever|neend|khaansi|khansi|gala)/.test(t)) {
-    await botSay('Sun kar afsos hua, Ahmad 🤧 Apna haal record kar lo to pattern saaf dikhega — "check-in" likho, main 3 chhote sawal puchh lunga.\nUs topic ki general jankari 📖 Guide tab me bhi hai. Aur haan — aankh ke aas-paas soojan, tez bukhaar ya saans ki dikkat ho to intezaar mat karna, ghar par bata kar doctor ko dikhana.' + flowNote);
+    await botSay('Sun kar afsos hua 🤧 Apna haal record kar lo to pattern saaf dikhega — "check-in" likho, main 3 chhote sawal puchh lunga.\nUs topic ki general jankari 📖 Guide tab me bhi hai. Aur haan — aankh ke aas-paas soojan, tez bukhaar ya saans ki dikkat ho to intezaar mat karna, ghar par bata kar doctor ko dikhana.' + flowNote);
     return;
   }
   if (/(record|history|pattern|graph|chart|purana)/.test(t)) {

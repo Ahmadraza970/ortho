@@ -1,5 +1,5 @@
 // Ortho service worker — app shell cache + web push
-const CACHE = 'ortho-v15';
+const CACHE = 'ortho-v16';
 const SHELL = [
   '/', '/index.html', '/styles.css', '/app.js', '/config.js', '/guide-content.js',
   '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'
@@ -37,7 +37,7 @@ self.addEventListener('push', (e) => {
   try { data = e.data ? e.data.json() : {}; } catch { data = { body: e.data ? e.data.text() : '' }; }
   const title = data.title || 'Ortho 🌿';
   const options = {
-    body: data.body || 'Subah ho gayi Ahmad 🌤️ Naak kaisi hai aaj? 2 minute me check-in kar lo — Ortho',
+    body: data.body || 'Subah ho gayi 🌤️ Naak kaisi hai aaj? 2 minute me check-in kar lo — Ortho',
     icon: '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
     tag: 'ortho-morning-checkin',
