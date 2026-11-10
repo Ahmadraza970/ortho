@@ -260,36 +260,61 @@ function switchTab(tab) {
 }
 
 /* ================= DATA ================= */
+let loadInFlight = null;
 async function loadEverything() {
-  const [c, d, p] = await Promise.all([
-    supabase.from('checkins').select('*').order('date', { ascending: false }).limit(120),
-    supabase.from('doctors').select('*').order('created_at', { ascending: true }),
-    supabase.from('profiles').select('*').maybeSingle()
-  ]);
-  checkins = c.data || [];
-  doctors = d.data || [];
-  if (!doctors.length) { await seedDoctors(); }
-  profileData = p.data || null;
-  if (p.data) {
-    $('#pMed').value = p.data.medicine_name || '';
-    $('#pMedTime').value = p.data.medicine_timing || '';
-    $('#pNote').value = p.data.note || '';
-  }
-  $('#fDate').value = localDateStr();
-  loadFormForDate(localDateStr());
-  renderDoctors();
-  renderRecord();
+  // Ek hi load ek baar — auth events se do load saath chal jayein to doctors
+  // seed do-baar ho jata tha (QA 2026-11-10: har doctor 3-3 baar dikha).
+  if (loadInFlight) return loadInFlight;
+  loadInFlight = (async () => {
+    const [c, d, p] = await Promise.all([
+      supabase.from('checkins').select('*').order('date', { ascending: false }).limit(120),
+      supabase.from('doctors').select('*').order('created_at', { ascending: true }),
+      supabase.from('profiles').select('*').maybeSingle()
+    ]);
+    checkins = c.data || [];
+    doctors = d.data || [];
+    // Purane duplicate seed rows khud saaf karo — naam se pehla wala rakho, baaki delete.
+    if (doctors.length > 1) {
+      const seenNames = new Set(); const keep = []; const dupeIds = [];
+      for (const doc of doctors) {
+        const k = (doc.name || '').trim().toLowerCase();
+        if (seenNames.has(k)) dupeIds.push(doc.id); else { seenNames.add(k); keep.push(doc); }
+      }
+      if (dupeIds.length) {
+        doctors = keep;
+        try { await supabase.from('doctors').delete().in('id', dupeIds).eq('user_id', currentUser.id); } catch {}
+      }
+    }
+    if (!doctors.length) { await seedDoctors(); }
+    profileData = p.data || null;
+    if (p.data) {
+      $('#pMed').value = p.data.medicine_name || '';
+      $('#pMedTime').value = p.data.medicine_timing || '';
+      $('#pNote').value = p.data.note || '';
+    }
+    renderProfileCard();
+    $('#fDate').value = localDateStr();
+    loadFormForDate(localDateStr());
+    renderDoctors();
+    renderRecord();
+  })();
+  try { await loadInFlight; } finally { loadInFlight = null; }
 }
 
+let seedInFlight = false;
 async function seedDoctors() {
-  const defaults = [
-    { name: 'Dr. Samresh Kashyap', detail: 'MS-ENT · 21 saal ka tajurba', place: 'Shankar Niwas, Nasriganj Road, Bikramganj 802212 (Dehri + Sasaram bhi)', phone: '+917982192014', note: 'Pehle phone karke Bikramganj wala din confirm karna.' },
-    { name: 'Dr. Manoranjan Kumar', detail: 'MS-ENT · 23 saal ka tajurba', place: 'Pinnacle Hospital, Rajendra Nagar, Patna', phone: '9304956487', note: '' },
-    { name: 'AIIMS Patna — ENT OPD', detail: 'Sarkaari hospital · ENT department', place: 'AIIMS Patna', phone: '+916122451070', note: 'OPD Mon–Fri, subah 08:00–12:30. Online registration: ors.gov.in' }
-  ];
-  const rows = defaults.map((x) => ({ ...x, user_id: currentUser.id }));
-  const { data } = await supabase.from('doctors').insert(rows).select();
-  doctors = data || defaults;
+  if (seedInFlight) return; // do-baar seed = duplicate doctors (QA 2026-11-10)
+  seedInFlight = true;
+  try {
+    const defaults = [
+      { name: 'Dr. Samresh Kashyap', detail: 'MS-ENT · 21 saal ka tajurba', place: 'Shankar Niwas, Nasriganj Road, Bikramganj 802212 (Dehri + Sasaram bhi)', phone: '+917982192014', note: 'Pehle phone karke Bikramganj wala din confirm karna.' },
+      { name: 'Dr. Manoranjan Kumar', detail: 'MS-ENT · 23 saal ka tajurba', place: 'Pinnacle Hospital, Rajendra Nagar, Patna', phone: '9304956487', note: '' },
+      { name: 'AIIMS Patna — ENT OPD', detail: 'Sarkaari hospital · ENT department', place: 'AIIMS Patna', phone: '+916122451070', note: 'OPD Mon–Fri, subah 08:00–12:30. Online registration: ors.gov.in' }
+    ];
+    const rows = defaults.map((x) => ({ ...x, user_id: currentUser.id }));
+    const { data } = await supabase.from('doctors').insert(rows).select();
+    doctors = data || defaults;
+  } finally { seedInFlight = false; }
 }
 
 async function saveCheckin(payload) {
@@ -479,6 +504,18 @@ $('#googleLinkBtn').addEventListener('click', async () => {
   }
 });
 
+/* "Meri takleef" card ki dawa wali line hamesha form ke current data se bane —
+   pehle ye static thi, save ke baad bhi purani dikhti thi (QA 2026-11-10). */
+function renderProfileCard() {
+  const el = $('#pfMedLine');
+  if (!el) return;
+  const med = ($('#pMed').value || '').trim();
+  const time = ($('#pMedTime').value || '').trim();
+  el.innerHTML = med
+    ? `<b>Abhi ki dawa:</b> ${escapeHtml(med)}${time ? ' — ' + escapeHtml(time) : ''}`
+    : '<b>Abhi ki dawa:</b> Koi dawa nahi chal rahi';
+}
+
 $('#profileForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   if (!currentUser) { msg($('#profileMsg'), 'Save karne ke liye pehle login karo — upar wale card se login link mangwao.', true); showLoginCard(); return; }
@@ -489,7 +526,7 @@ $('#profileForm').addEventListener('submit', async (e) => {
     note: $('#pNote').value.trim() || null,
     updated_at: new Date().toISOString()
   });
-  if (!error) profileData = { ...(profileData || {}), medicine_name: $('#pMed').value.trim() || null, medicine_timing: $('#pMedTime').value.trim() || null };
+  if (!error) { profileData = { ...(profileData || {}), medicine_name: $('#pMed').value.trim() || null, medicine_timing: $('#pMedTime').value.trim() || null }; renderProfileCard(); }
   msg($('#profileMsg'), error ? 'Save nahi hua — phir try karo.' : '✅ Save ho gaya!', !!error);
 });
 
