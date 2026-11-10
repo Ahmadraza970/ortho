@@ -1,74 +1,74 @@
-// Sinus guide — full content of knowledge/sinus-deep-guide.md (general jankari, diagnosis nahi)
+// Health guide — general information (from knowledge/sinus-deep-guide.md), not a diagnosis
 window.GUIDE_HTML = `
-<h3>1. Sinus hote kya hain</h3>
+<h3>1. What the sinuses are</h3>
 <ul>
-<li>Sinus = khopdi ki haddiyon ke andar hawa bhari 4 jodi gufaayein (cavities), jo naak se chhote raste (ostia) se judi hoti hain:
+<li>Sinuses are 4 pairs of air-filled cavities inside the skull bones, connected to the nose by small passages (ostia):
   <ul>
-  <li><b>Maxillary</b> — dono gaalon ke andar (sabse bade)</li>
-  <li><b>Frontal</b> — maathe ke andar</li>
-  <li><b>Ethmoid</b> — dono aankhon ke beech, chhoti-chhoti kothriyan</li>
-  <li><b>Sphenoid</b> — naak ke sabse peeche, gehraai me</li>
+  <li><b>Maxillary</b> — inside both cheeks (the largest)</li>
+  <li><b>Frontal</b> — inside the forehead</li>
+  <li><b>Ethmoid</b> — between the two eyes, many small chambers</li>
+  <li><b>Sphenoid</b> — deepest, behind the nose</li>
   </ul></li>
-<li>Kaam: saans ki hawa ko garam/nam karna, awaaz ko gunj (resonance) dena, khopdi ka wazan halka rakhna, aur mucus (balgam jaisa patla padarth) bana kar naak ko saaf rakhna. Mucus chhote baalon jaise cilia se naak ki taraf behta rehta hai.</li>
-<li>Jab inke raste (ostia) band ho jayein, mucus andar fas jata hai — wahi se band naak, bhaari-pan aur sar dard shuru hota hai.</li>
+<li>Their jobs: warm and moisten the air you breathe, give the voice its resonance, keep the skull light, and make mucus (a thin, slippery fluid) that keeps the nose clean. Tiny hair-like cilia keep sweeping that mucus toward the nose.</li>
+<li>When their passages (ostia) get blocked, mucus gets trapped inside — that is where a blocked nose, heaviness and headache begin.</li>
 </ul>
 
-<h3>2. Allergy se sinus tak (mechanism)</h3>
+<h3>2. From allergy to sinus trouble (the mechanism)</h3>
 <ol>
-<li>Allergen (dhool, mites, pollen, thandi hawa, tez khushboo) naak ki andar wali chamdi (mucosa) ko chhuta hai.</li>
-<li>Body histamine jaise chemical chhodti hai → mucosa <b>phool (swell)</b> jati hai, paani/mucus zyada banta hai → chheenk, behti/band naak.</li>
-<li>Phooli hui mucosa sinus ke raste band kar deti hai → sinus me hawa aur safai rukti hai → dabaav (pressure) → maathe/gaal/aankhon ke aas-paas dard-bhaari-pan.</li>
-<li>Lambe samay tak yahi chale = <b>chronic</b> sthiti; infection jud jaye to bacterial sinusitis bhi ho sakta hai (isiliye doctor kabhi-kabhi antibiotic deta hai — par har baar nahi).</li>
+<li>An allergen (dust, mites, pollen, cold air, strong smells) touches the inner lining of the nose (the mucosa).</li>
+<li>The body releases chemicals like histamine → the mucosa <b>swells</b>, more water/mucus is made → sneezing, a runny or blocked nose.</li>
+<li>The swollen mucosa blocks the sinus passages → air and cleaning stop inside the sinus → pressure builds → pain and heaviness around the forehead, cheeks and eyes.</li>
+<li>If this keeps happening for a long time it becomes a <b>chronic</b> condition; if an infection joins in, bacterial sinusitis is also possible (that is why a doctor sometimes gives an antibiotic — but not every time).</li>
 </ol>
 
-<h3>3. Spray kaam kaise karta hai (aur sahi tareeka)</h3>
+<h3>3. How a spray works (and the right technique)</h3>
 <ul>
-<li><b>Steroid nasal spray</b> (jo aam taur par allergic sinus me diya jata hai) naak ki soojan ko dheere-dheere kam karta hai. Asar turant nahi — <b>roz sahi istemal par 1–2 hafte</b> me poora asar dikhta hai. Beech me chhod dena sabse aam galti hai.</li>
-<li>Sahi technique:
+<li>A <b>steroid nasal spray</b> (commonly given for allergic sinus trouble) slowly reduces the swelling inside the nose. Its effect is not instant — with <b>correct daily use, the full effect shows in 1–2 weeks</b>. Stopping in between is the most common mistake.</li>
+<li>The right technique:
   <ul>
-  <li>Pehle naak saaf karo (halki si saaf safai / saline).</li>
-  <li>Nozzle ko <b>bahar ki deewaar ki taraf</b> rakho (seedha beech wali haddi/septum ki taraf nahi) — septum par roz spray se naak se khoon (epistaxis) aa sakta hai.</li>
-  <li>Halki saans andar lete hue spray karo; zor se soonghna nahi (dawa gala me chali jati hai, naak me nahi rehti).</li>
-  <li>Sir peeche jhukana nahi.</li>
+  <li>Clean the nose first (a gentle clean / saline).</li>
+  <li>Point the nozzle <b>toward the outer wall</b> (not straight at the middle bone, the septum) — spraying onto the septum every day can cause nosebleeds.</li>
+  <li>Spray while breathing in gently; do not sniff hard (the medicine runs down the throat instead of staying in the nose).</li>
+  <li>Do not tilt your head back.</li>
   </ul></li>
-<li><b>Saline (namak paani) se naak dhona</b> (rinse/neti-type, saaf ubla-thanda paani se) mucus patla karke raste kholne me madad karta hai — doctors aam taur par iski salah dete hain. Paani hamesha saaf/ubla hua ho — ye zaroori safety baat hai.</li>
-<li><b>Decongestant spray</b> (turant kholne wale) lagatar 3–5 din se zyada istemal par ulta aur band naak (rebound) ho sakta hai — isiliye doctor bina kahe lambe istemal nahi.</li>
+<li><b>Washing the nose with saline (salt water)</b> (a rinse / neti-style wash, always with clean boiled-then-cooled water) thins the mucus and helps open the passages — doctors commonly advise it. The water must always be clean/boiled — this is an essential safety point.</li>
+<li>A <b>decongestant spray</b> (the instant-opening kind) used continuously for more than 3–5 days can cause the opposite — an even more blocked nose (rebound) — which is why long use without a doctor's advice is not done.</li>
 </ul>
 
-<h3>4. Doctor (ENT) kya-kya check karta hai</h3>
+<h3>4. What a doctor (ENT) checks</h3>
 <ul>
-<li><b>Nasal endoscopy</b> — patli camera wali nali se naak ke andar dekhna: soojan, polyps (naram gudde), raste band hain ya nahi.</li>
-<li><b>CT scan (sinus)</b> — jab lambe samay se theek na ho ya surgery sochni ho: kaun se sinus band hain, haddi ki banawat.</li>
-<li><b>Allergy test</b> (skin prick / khoon IgE) — kis cheez se allergy hai, taaki usse bachav plan bane.</li>
-<li>Kabhi-kabhi <b>deviated septum</b> (tedhi beech-wali haddi) ya polyps bhi wajah hote hain — endoscopy/CT se pata chalta hai.</li>
+<li><b>Nasal endoscopy</b> — looking inside the nose with a thin camera tube: swelling, polyps (soft growths), whether the passages are blocked.</li>
+<li><b>CT scan (sinus)</b> — when it does not settle for a long time or surgery is being considered: which sinuses are blocked, the shape of the bones.</li>
+<li><b>Allergy test</b> (skin prick / blood IgE) — what exactly you are allergic to, so an avoidance plan can be made.</li>
+<li>Sometimes a <b>deviated septum</b> (a bent middle bone) or polyps are also a cause — endoscopy/CT reveals them.</li>
 </ul>
 
-<h3>5. Ilaaj ki seedhi <span style="font-weight:400;font-size:14px">(general jankari — tum par kya lagu hai, ye doctor tay karega)</span></h3>
+<h3>5. The treatment ladder <span style="font-weight:400;font-size:14px">(general information — what applies to you is decided by a doctor)</span></h3>
 <ol>
-<li>Allergen se bachav (dhool-mitti, bistar ki safai, dhule hue kapde)</li>
-<li>Saline rinse (roz)</li>
-<li>Steroid nasal spray (lagatar, sahi technique se)</li>
-<li>Antihistamine (chheenk/khujli/behti naak ke liye, doctor ki salah par)</li>
-<li>Bacterial ke sanket hon to antibiotic (doctor hi tay karta hai)</li>
-<li>Allergy immunotherapy (lambe ilaaj ka vikalp, specialist ke paas)</li>
-<li>Kuch cases me surgery (FESS — raste kholna / septum seedha karna) — jab dawa se lambe samay tak aaram na mile</li>
+<li>Avoiding the allergen (dust, bedding hygiene, washed clothes)</li>
+<li>Saline rinse (daily)</li>
+<li>Steroid nasal spray (regularly, with the right technique)</li>
+<li>Antihistamine (for sneezing/itching/runny nose, on a doctor's advice)</li>
+<li>An antibiotic if there are signs of a bacterial infection (only a doctor decides)</li>
+<li>Allergy immunotherapy (a long-term option, with a specialist)</li>
+<li>Surgery in some cases (FESS — opening the passages / straightening the septum) — when medicine does not help for a long time</li>
 </ol>
 
-<h3>6. Khatre ke sanket — turant ghar par batao + doctor (der nahi)</h3>
+<h3>6. Danger signs — tell your family and see a doctor at once (no delay)</h3>
 <ul>
-<li>Aankh ke aas-paas soojan, aankh dard, dohra/dhundla dikhna</li>
-<li>Maathe par soojan, ya sar dard jo aam dawa se na jaye / badhta jaye</li>
-<li>Tez bukhaar ke saath chehre par tez dard-soojan</li>
-<li>Gardan akdan, tez neend/ulti ke saath sar dard</li>
-<li>Naak se baar-baar zyada khoon aana</li>
+<li>Swelling around the eyes, eye pain, double or blurred vision</li>
+<li>Swelling on the forehead, or a headache that does not settle with a common medicine / keeps growing</li>
+<li>High fever with severe pain and swelling in the face</li>
+<li>Neck stiffness, or a headache with severe sleepiness/vomiting</li>
+<li>Frequent heavy bleeding from the nose</li>
 </ul>
 
-<h3>7. Padhai/neend ke liye aam salah (general)</h3>
+<h3>7. General tips for study and sleep</h3>
 <ul>
-<li>Sone se pehle saline rinse + spray ka time fix rakhna (band naak = kharab neend = agle din dhyaan kam).</li>
-<li>Sir thoda uncha karke sona (extra takiya) — raat ko band-pan kam mehsoos hota hai.</li>
-<li>Kamre ki dhool safai, bistar hafte me dhona — dust-mite allergy me sabse zyada fayda yahi deta hai.</li>
-<li>Thandi hawa/AC seedha chehre par na lage.</li>
+<li>Keep a fixed time for the saline rinse + spray before sleeping (a blocked nose = poor sleep = less focus the next day).</li>
+<li>Sleep with your head slightly raised (an extra pillow) — the blocked feeling is less at night.</li>
+<li>Keep the room free of dust and wash the bedding weekly — this helps the most in dust-mite allergy.</li>
+<li>Do not let cold air / AC blow straight onto your face.</li>
 </ul>
-<p style="color:#5C6B64;font-size:13.5px">Sources (general medical jankari): StatPearls / NCBI, OpenStax Anatomy &amp; Physiology, MedlinePlus.</p>
+<p style="color:#5C6B64;font-size:13.5px">Sources (general medical information): StatPearls / NCBI, OpenStax Anatomy &amp; Physiology, MedlinePlus.</p>
 `;

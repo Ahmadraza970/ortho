@@ -24,14 +24,14 @@ function myFirstName() {
 }
 function greetingLine() {
   const nm = myFirstName();
-  return `Assalamualaikum${nm ? ' ' + nm : ''} 🌤️ Main Ortho — tumhara health saathi.`;
+  return `Hello${nm ? ' ' + nm : ''} 🌤️ I'm Ortho — your health companion.`;
 }
 let checkins = [];
 let doctors = [];
 let profileData = null;
 
-const SLEEP_LABEL = { achhi: 'Achhi 😴', beech: 'Beech wali', kharab: 'Kharab 😖' };
-const STUDY_LABEL = { koi_nahi: 'Padhai par koi asar nahi', thoda: 'Padhai par thoda asar', zyada: 'Padhai par zyada asar' };
+const SLEEP_LABEL = { achhi: 'Good 😴', beech: 'So-so', kharab: 'Bad 😖' };
+const STUDY_LABEL = { koi_nahi: 'No effect on studies', thoda: 'Slight effect on studies', zyada: 'Big effect on studies' };
 /* Logged-out chat check-in ka device-local record (date-stamped). Login hone par
    mergeLocalCheckin() ise account ke daily record me mila deta hai. */
 const LOCAL_CHECKIN_KEY = 'ortho_local_checkin_v1';
@@ -122,13 +122,13 @@ function renderGoogleLink(user) {
   if (!state || !btn || !user) return;
   const linked = (user.identities || []).some((i) => i.provider === 'google');
   if (linked) {
-    state.textContent = 'Google account: juda hua hai ✓';
+    state.textContent = 'Google account: connected ✓';
     btn.hidden = true;
   } else {
-    state.textContent = 'Google account: joda nahi hai';
+    state.textContent = 'Google account: not connected';
     btn.hidden = false;
     btn.disabled = false;
-    btn.textContent = 'Google jodo';
+    btn.textContent = 'Connect Google';
   }
 }
 
@@ -173,14 +173,14 @@ $('#magicForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const email = $('#emailInput').value.trim();
   const btn = $('#magicBtn');
-  btn.disabled = true; btn.textContent = 'Bhej raha hai…';
+  btn.disabled = true; btn.textContent = 'Sending…';
   const { error } = await supabase.auth.signInWithOtp({
     email, options: { emailRedirectTo: window.location.origin + '/' }
   });
-  btn.disabled = false; btn.textContent = 'Login link bhejo';
-  if (error) msg($('#magicMsg'), 'Link nahi gaya — email phir se check karke try karo.', true);
+  btn.disabled = false; btn.textContent = 'Send login link';
+  if (error) msg($('#magicMsg'), 'The link did not go — check the email again and try once more.', true);
   else {
-    msg($('#magicMsg'), '✅ Link bhej diya hai! Apna email kholo aur link par tap karo.');
+    msg($('#magicMsg'), '✅ Link sent! Open your email and tap the link.');
     // Usi email me 6 number ka code bhi aata hai — link scan ho jaye to code se
     // turant login ho sakta hai; hint dikhao aur code wali row khud khol do.
     $('#otpHint').hidden = false;
@@ -216,14 +216,14 @@ $('#otpInput').addEventListener('keydown', (e) => {
 
 async function loginWithCode() {
   const email = $('#emailInput').value.trim();
-  if (!email) { msg($('#magicMsg'), 'Pehle upar email daalo 🌿', true); $('#emailInput').focus(); return; }
+  if (!email) { msg($('#magicMsg'), 'Enter your email above first 🌿', true); $('#emailInput').focus(); return; }
   const code = cleanOtpCode($('#otpInput').value);
-  if (!code) { msg($('#magicMsg'), 'Code 6 number ka hona chahiye — email wala code phir se daalo.', true); return; }
+  if (!code) { msg($('#magicMsg'), 'The code must be 6 digits — enter the code from the email again.', true); return; }
   const btn = $('#otpBtn');
-  btn.disabled = true; btn.textContent = 'Rukho…';
+  btn.disabled = true; btn.textContent = 'Wait…';
   const { error } = await supabase.auth.verifyOtp({ email, token: code, type: 'email' });
-  btn.disabled = false; btn.textContent = 'Code se login karo';
-  if (error) msg($('#magicMsg'), 'Code galat ya purana hai — email wala sabse naya code daalo', true);
+  btn.disabled = false; btn.textContent = 'Log in with code';
+  if (error) msg($('#magicMsg'), 'The code is wrong or old — enter the newest code from the email', true);
   // Safal: onAuthStateChange khud setUser/afterLogin chala dega.
 }
 
@@ -243,7 +243,7 @@ $('#googleBtn').addEventListener('click', async () => {
     if (error) throw error;
   } catch {
     btn.disabled = false;
-    await botSay('Google login abhi nahi ho paya — email link wala tareeka chal raha hai');
+    await botSay('Google login did not work just now — the email-link method is still available');
   }
 });
 
@@ -339,14 +339,14 @@ function loadFormForDate(dateStr) {
   $('#fHead').value = row?.headache ?? 0; $('#headVal').textContent = row?.headache ?? 0;
   $('#fStudy').value = row?.study_impact ?? '';
   $('#fNote').value = row?.note ?? '';
-  $('#checkinTitle').textContent = dateStr === localDateStr() ? 'Aaj ka check-in' : 'Check-in badlo — ' + fmtDate(dateStr);
+  $('#checkinTitle').textContent = dateStr === localDateStr() ? "Today's check-in" : 'Edit check-in — ' + fmtDate(dateStr);
 }
 
 $('#checkinForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  if (!currentUser) { msg($('#checkinMsg'), 'Save karne ke liye pehle login karo — upar wale card se login link mangwao.', true); showLoginCard(); return; }
+  if (!currentUser) { msg($('#checkinMsg'), 'Please log in first to save — get a login link from the card above.', true); showLoginCard(); return; }
   const btn = $('#saveCheckinBtn');
-  btn.disabled = true; btn.textContent = 'Save ho raha hai…';
+  btn.disabled = true; btn.textContent = 'Saving…';
   try {
     await saveCheckin({
       date: $('#fDate').value,
@@ -356,12 +356,12 @@ $('#checkinForm').addEventListener('submit', async (e) => {
       study_impact: $('#fStudy').value || null,
       note: $('#fNote').value.trim() || null
     });
-    msg($('#checkinMsg'), '✅ Save ho gaya!');
+    msg($('#checkinMsg'), '✅ Saved!');
     // Aaj ka record form se badla — chat me koi purana pending flow ho to use bhi
     // khatm kar do; chat-side state ab isi record se DONE padhega.
     if ($('#fDate').value === localDateStr()) clearPendingFlow();
-  } catch { msg($('#checkinMsg'), 'Save nahi hua — net check karke phir try karo.', true); }
-  btn.disabled = false; btn.textContent = 'Save karo';
+  } catch { msg($('#checkinMsg'), 'Could not save — check your connection and try again.', true); }
+  btn.disabled = false; btn.textContent = 'Save';
 });
 
 /* ================= RECORD ================= */
@@ -371,7 +371,7 @@ function renderRecord() {
   if (!checkins.length) {
     sum.innerHTML = '';
     $('#chartCard').hidden = true;
-    list.innerHTML = '<div class="empty-box">Abhi koi record nahi hai.<br>Pehla check-in Chat ya Check-in tab se karo 🌿</div>';
+    list.innerHTML = '<div class="empty-box">No records yet.<br>Do your first check-in from the Chat or Check-in tab 🌿</div>';
     return;
   }
   const withNums = checkins.filter((r) => r.nose != null || r.headache != null);
@@ -383,19 +383,19 @@ function renderRecord() {
     ? withNums.reduce((a, b) => ((b.nose || 0) + (b.headache || 0) > (a.nose || 0) + (a.headache || 0) ? b : a))
     : null;
   sum.innerHTML = `
-    <div class="sum-card"><div class="sum-num">${avg('nose')}</div><div class="sum-label">Average naak band /10</div></div>
-    <div class="sum-card"><div class="sum-num">${avg('headache')}</div><div class="sum-label">Average sar dard /10</div></div>
-    <div class="sum-card"><div class="sum-num">${checkins.length}</div><div class="sum-label">Kul din ka record</div></div>
-    <div class="sum-card"><div class="sum-num" style="font-size:19px;padding-top:5px">${worst ? fmtDate(worst.date) : '—'}</div><div class="sum-label">Sabse kharab din</div></div>`;
+    <div class="sum-card"><div class="sum-num">${avg('nose')}</div><div class="sum-label">Average blocked nose /10</div></div>
+    <div class="sum-card"><div class="sum-num">${avg('headache')}</div><div class="sum-label">Average headache /10</div></div>
+    <div class="sum-card"><div class="sum-num">${checkins.length}</div><div class="sum-label">Total days recorded</div></div>
+    <div class="sum-card"><div class="sum-num" style="font-size:19px;padding-top:5px">${worst ? fmtDate(worst.date) : '—'}</div><div class="sum-label">Worst day</div></div>`;
   renderChart(withNums);
   list.innerHTML = checkins.map((r) => `
     <div class="hist-item">
       <div class="hist-top"><span class="hist-date">${fmtDate(r.date)}</span></div>
-      <div class="hist-nums">👃 Naak band: <b>${r.nose ?? '—'}/10</b> · 🤕 Sar dard: <b>${r.headache ?? '—'}/10</b>${r.sleep ? ' · Neend: ' + SLEEP_LABEL[r.sleep] : ''}${r.study_impact ? '<br>' + STUDY_LABEL[r.study_impact] : ''}</div>
+      <div class="hist-nums">👃 Blocked nose: <b>${r.nose ?? '—'}/10</b> · 🤕 Headache: <b>${r.headache ?? '—'}/10</b>${r.sleep ? ' · Sleep: ' + SLEEP_LABEL[r.sleep] : ''}${r.study_impact ? '<br>' + STUDY_LABEL[r.study_impact] : ''}</div>
       ${r.note ? `<div class="hist-note">📝 ${escapeHtml(r.note)}</div>` : ''}
       <div class="hist-actions">
-        <button class="btn-small" data-edit="${r.date}">✏️ Badlo</button>
-        <button class="btn-small danger" data-del="${r.date}">🗑️ Mitao</button>
+        <button class="btn-small" data-edit="${r.date}">✏️ Edit</button>
+        <button class="btn-small danger" data-del="${r.date}">🗑️ Delete</button>
       </div>
     </div>`).join('');
   list.querySelectorAll('[data-edit]').forEach((b) => b.addEventListener('click', () => {
@@ -423,7 +423,7 @@ function renderChart(rowsAsc) {
     return `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>${dots}`;
   };
   const grid = [0, 5, 10].map((v) => `<line x1="${P}" y1="${Y(v)}" x2="${W - P}" y2="${Y(v)}" stroke="#E4EAE6"/><text x="2" y="${Y(v) + 4}" font-size="9" fill="#5C6B64">${v}</text>`).join('');
-  $('#chartWrap').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Naak band aur sar dard ka pattern chart">${grid}${line('nose', '#0B6E4F')}${line('headache', '#D97706')}</svg>`;
+  $('#chartWrap').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Blocked nose and headache pattern chart">${grid}${line('nose', '#0B6E4F')}${line('headache', '#D97706')}</svg>`;
 }
 
 function escapeHtml(s) {
@@ -434,7 +434,7 @@ function escapeHtml(s) {
 function renderDoctors() {
   const wrap = $('#doctorList');
   if (!doctors.length) {
-    wrap.innerHTML = '<div class="empty-box">Abhi koi doctor nahi hai.<br>Neeche apna doctor jodo 👇</div>';
+    wrap.innerHTML = '<div class="empty-box">No doctors yet.<br>Add your doctor below 👇</div>';
     return;
   }
   wrap.innerHTML = doctors.map((d) => `
@@ -444,12 +444,12 @@ function renderDoctors() {
       ${d.place ? `<div class="doc-place">📍 ${escapeHtml(d.place)}</div>` : ''}
       ${d.note ? `<div class="doc-note">📝 ${escapeHtml(d.note)}</div>` : ''}
       <div class="doc-actions">
-        ${d.phone ? `<a class="btn-call" href="tel:${escapeHtml(d.phone.replace(/\s/g, ''))}">📞 Call karo</a>` : ''}
-        <button class="btn-small danger" data-doc-del="${d.id}">🗑️ Mitao</button>
+        ${d.phone ? `<a class="btn-call" href="tel:${escapeHtml(d.phone.replace(/\s/g, ''))}">📞 Call</a>` : ''}
+        <button class="btn-small danger" data-doc-del="${d.id}">🗑️ Delete</button>
       </div>
     </div>`).join('');
   wrap.querySelectorAll('[data-doc-del]').forEach((b) => b.addEventListener('click', async () => {
-    if (!confirm('Ye doctor entry mita dun?')) return;
+    if (!confirm('Delete this doctor entry?')) return;
     await supabase.from('doctors').delete().eq('id', b.dataset.docDel).eq('user_id', currentUser.id);
     doctors = doctors.filter((x) => String(x.id) !== b.dataset.docDel);
     renderDoctors();
@@ -458,7 +458,7 @@ function renderDoctors() {
 
 $('#doctorForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  if (!currentUser) { msg($('#doctorMsg'), 'Doctor add karne ke liye pehle login karo — upar wale card se login link mangwao.', true); showLoginCard(); return; }
+  if (!currentUser) { msg($('#doctorMsg'), 'Please log in first to add a doctor — get a login link from the card above.', true); showLoginCard(); return; }
   const payload = {
     user_id: currentUser.id,
     name: $('#dName').value.trim(),
@@ -468,10 +468,10 @@ $('#doctorForm').addEventListener('submit', async (e) => {
     note: $('#dNote').value.trim() || null
   };
   const { data, error } = await supabase.from('doctors').insert(payload).select().single();
-  if (error) { msg($('#doctorMsg'), 'Doctor add nahi hua — phir try karo.', true); return; }
+  if (error) { msg($('#doctorMsg'), 'Could not add the doctor — please try again.', true); return; }
   doctors.push(data);
   e.target.reset();
-  msg($('#doctorMsg'), '✅ Doctor add ho gaya!');
+  msg($('#doctorMsg'), '✅ Doctor added!');
   renderDoctors();
 });
 
@@ -484,7 +484,7 @@ $('#doctorForm').addEventListener('submit', async (e) => {
 $('#googleLinkBtn').addEventListener('click', async () => {
   if (!currentUser) { showLoginCard(); return; }
   const btn = $('#googleLinkBtn');
-  btn.disabled = true; btn.textContent = 'Google se jod raha hai…';
+  btn.disabled = true; btn.textContent = 'Connecting Google…';
   try {
     const { error } = await supabase.auth.linkIdentity({
       provider: 'google',
@@ -494,8 +494,8 @@ $('#googleLinkBtn').addEventListener('click', async () => {
     // Safal: browser Google ki taraf gaya; return par onAuthStateChange -> setUser ->
     // renderGoogleLink state khud refresh kar dega.
   } catch {
-    btn.disabled = false; btn.textContent = 'Google jodo';
-    msg($('#googleLinkMsg'), 'Google abhi nahi jud paya — thodi der baad phir try karo.', true);
+    btn.disabled = false; btn.textContent = 'Connect Google';
+    msg($('#googleLinkMsg'), 'Google could not connect just now — please try again in a bit.', true);
   }
 });
 
@@ -513,10 +513,10 @@ function renderProfileCard() {
     return !!v;
   };
   const any =
-    setRow('#pfTakleef', 'Takleef', $('#pTakleef').value) |
-    setRow('#pfSince', 'Kab se', $('#pSince').value) |
-    setRow('#pfPrev', 'Pehle ka ilaaz', $('#pPrev').value) |
-    setRow('#pfSymptoms', 'Lakshan', $('#pSymptoms').value);
+    setRow('#pfTakleef', 'Problem', $('#pTakleef').value) |
+    setRow('#pfSince', 'Since when', $('#pSince').value) |
+    setRow('#pfPrev', 'Previous treatment', $('#pPrev').value) |
+    setRow('#pfSymptoms', 'Symptoms', $('#pSymptoms').value);
   const emptyEl = $('#pfEmpty');
   if (emptyEl) emptyEl.hidden = !!any;
   const el = $('#pfMedLine');
@@ -524,13 +524,13 @@ function renderProfileCard() {
   const med = ($('#pMed').value || '').trim();
   const time = ($('#pMedTime').value || '').trim();
   el.innerHTML = med
-    ? `<b>Abhi ki dawa:</b> ${escapeHtml(med)}${time ? ' — ' + escapeHtml(time) : ''}`
-    : '<b>Abhi ki dawa:</b> Koi dawa nahi chal rahi';
+    ? `<b>Current medicine:</b> ${escapeHtml(med)}${time ? ' — ' + escapeHtml(time) : ''}`
+    : '<b>Current medicine:</b> No medicine in use';
 }
 
 $('#profileForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  if (!currentUser) { msg($('#profileMsg'), 'Save karne ke liye pehle login karo — upar wale card se login link mangwao.', true); showLoginCard(); return; }
+  if (!currentUser) { msg($('#profileMsg'), 'Please log in first to save — get a login link from the card above.', true); showLoginCard(); return; }
   const { error } = await supabase.from('profiles').upsert({
     user_id: currentUser.id,
     takleef: $('#pTakleef').value.trim() || null,
@@ -543,7 +543,7 @@ $('#profileForm').addEventListener('submit', async (e) => {
     updated_at: new Date().toISOString()
   });
   if (!error) { profileData = { ...(profileData || {}), takleef: $('#pTakleef').value.trim() || null, since_when: $('#pSince').value.trim() || null, prev_treatment: $('#pPrev').value.trim() || null, symptoms: $('#pSymptoms').value.trim() || null, medicine_name: $('#pMed').value.trim() || null, medicine_timing: $('#pMedTime').value.trim() || null }; renderProfileCard(); }
-  msg($('#profileMsg'), error ? 'Save nahi hua — phir try karo.' : '✅ Save ho gaya!', !!error);
+  msg($('#profileMsg'), error ? 'Could not save — please try again.' : '✅ Saved!', !!error);
 });
 
 /* ================= PUSH ================= */
@@ -555,11 +555,11 @@ function urlBase64ToUint8Array(b64) {
 
 $('#pushBtn').addEventListener('click', async () => {
   const out = $('#pushMsg');
-  if (!currentUser) { msg(out, 'Notifications ke liye pehle login karo — upar wale card se login link mangwao.', true); showLoginCard(); return; }
+  if (!currentUser) { msg(out, 'Please log in first for notifications — get a login link from the card above.', true); showLoginCard(); return; }
   try {
-    if (!('PushManager' in window)) { msg(out, 'Is browser me push support nahi hai. App ko home screen par add karke kholo, phir try karo.', true); return; }
+    if (!('PushManager' in window)) { msg(out, 'This browser does not support push. Add the app to your home screen, open it from there, then try again.', true); return; }
     const perm = await Notification.requestPermission();
-    if (perm !== 'granted') { msg(out, 'Permission nahi mili. Phone ki Settings → Apps → Ortho → Notifications se ON kar sakte ho.', true); return; }
+    if (perm !== 'granted') { msg(out, 'Permission was not given. You can turn it ON from your phone Settings → Apps → Ortho → Notifications.', true); return; }
     const reg = await navigator.serviceWorker.ready;
     let sub = await reg.pushManager.getSubscription();
     if (!sub) {
@@ -573,9 +573,9 @@ $('#pushBtn').addEventListener('click', async () => {
       user_id: currentUser.id, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth
     }, { onConflict: 'endpoint' });
     if (error) throw error;
-    msg(out, '✅ Notifications ON ho gayi! Roz subah pyaar bhari yaad aayegi 🌤️');
-    $('#pushBtn').textContent = 'Notifications ON hai ✅';
-  } catch { msg(out, 'Kuch gadbad hui — thodi der baad phir try karo.', true); }
+    msg(out, '✅ Notifications are ON! A warm reminder will come every morning 🌤️');
+    $('#pushBtn').textContent = 'Notifications are ON ✅';
+  } catch { msg(out, 'Something went wrong — please try again in a bit.', true); }
 });
 
 /* ================= CHAT (guided check-in + local intents + AI brain) ================= */
@@ -612,7 +612,7 @@ function checkinDoneToday() {
 }
 function todayDoneLine() {
   const r = todayRecord();
-  return `Aaj ka check-in ho chuka hai ✓ — Neend: ${SLEEP_LABEL[r.sleep] || r.sleep}, Naak band: ${r.nose}/10, Sar dard: ${r.headache}/10. Kuch badalna ho to Check-in tab se edit kar lo.`;
+  return `Today's check-in is done ✓ — Sleep: ${SLEEP_LABEL[r.sleep] || r.sleep}, Blocked nose: ${r.nose}/10, Headache: ${r.headache}/10. To change anything, edit it from the Check-in tab.`;
 }
 /* Pending flow ko chup-chaap khatm karna — state, draft aur on-screen chips teeno saaf. */
 function clearPendingFlow() {
@@ -684,7 +684,7 @@ function addFeedbackRow(div) {
 
 async function submitFeedback(div, row, rating) {
   if (!currentUser) {
-    await botSay('Feedback ke liye pehle login karna hoga 🌿 Login ke baad tumhara 👍/👎 meri sudhaar wali list me jud jayega.');
+    await botSay('Please log in first to give feedback 🌿 After login, your 👍/👎 goes onto my improvement list.');
     showLoginCard();
     return;
   }
@@ -701,7 +701,7 @@ async function submitFeedback(div, row, rating) {
     btns.forEach((b) => { b.disabled = false; });
     return;
   }
-  row.innerHTML = '<span class="fbthanks">Dhanyavaad 🙏</span>';
+  row.innerHTML = '<span class="fbthanks">Thank you 🙏</span>';
 }
 function scrollChat() { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }
 function setChips(items, onPick, asGrid = false) {
@@ -735,19 +735,19 @@ async function startChat(first = false) {
   }
   chatState = 'start';
   const today = todayRecord();
-  if (!currentUser) await botSay('Ek chhoti baat — abhi tum login nahi ho, to aaj ka record is device par save hoga; login karne par wahi record tumhare account me jud jayega 🌿');
+  if (!currentUser) await botSay('One small thing — you are not logged in right now, so today\'s record will save on this device; when you log in, that record will join your account 🌿');
   if (today && (today.nose != null || today.sleep)) {
-    await botSay(`Aaj ka check-in pehle se hai ✅ (Naak band ${today.nose ?? '—'}/10, sar dard ${today.headache ?? '—'}/10). Update karna hai?`);
+    await botSay(`Today's check-in already exists ✅ (Blocked nose ${today.nose ?? '—'}/10, Headache ${today.headache ?? '—'}/10). Do you want to update it?`);
     setChips([
-      { label: 'Haan, update karo', val: 'yes' },
-      { label: 'Nahi, rehne do', val: 'no' }
+      { label: 'Yes, update it', val: 'yes' },
+      { label: 'No, leave it', val: 'no' }
     ], async (it) => {
       meSay(it.label);
       if (it.val === 'yes') askSleep();
-      else { chatState = 'idle'; await botSay('Theek hai 🌿 Jab mann ho, "check-in" likh bhej dena — main phir se puchh lunga.'); }
+      else { chatState = 'idle'; await botSay('Alright 🌿 Whenever you feel like it, just send "check-in" — I will ask again.'); }
     });
   } else {
-    await botSay('Aaj ka chhota sa check-in kar lete hain — bas 3 sawal, 1 minute lagega. 🌿');
+    await botSay('Let us do today\'s small check-in — just 3 questions, it takes 1 minute. 🌿');
     askSleep();
   }
 }
@@ -756,11 +756,11 @@ async function askSleep() {
   chatState = 'sleep';
   flowDate = localDateStr();
   flowNagged = false;
-  await botSay('Pehle ye batao — raat ko neend kaisi thi?');
+  await botSay('First tell me — how was your sleep last night?');
   setChips([
-    { label: 'Achhi 😴', val: 'achhi' },
-    { label: 'Beech wali', val: 'beech' },
-    { label: 'Kharab 😖', val: 'kharab' }
+    { label: 'Good 😴', val: 'achhi' },
+    { label: 'So-so', val: 'beech' },
+    { label: 'Bad 😖', val: 'kharab' }
   ], (it) => { meSay(it.label); draft.sleep = it.val; askNose(); });
 }
 
@@ -769,7 +769,7 @@ async function askNose() {
   if (checkinDoneToday()) { clearPendingFlow(); await botSay(todayDoneLine()); return; }
   chatState = 'nose';
   flowNagged = false;
-  await botSay('Ab naak ka haal — abhi naak kitni band lag rahi hai?\n(0 = bilkul khuli, 10 = poori band)');
+  await botSay('Now your nose — how blocked does it feel right now?\n(0 = fully open, 10 = completely blocked)');
   numChips((v) => { draft.nose = v; askHead(); });
 }
 
@@ -777,7 +777,7 @@ async function askHead() {
   if (checkinDoneToday()) { clearPendingFlow(); await botSay(todayDoneLine()); return; }
   chatState = 'head';
   flowNagged = false;
-  await botSay('Aur sar dard? (0 = bilkul nahi, 10 = sabse tez)');
+  await botSay('And the headache? (0 = none at all, 10 = the worst)');
   numChips((v) => { draft.headache = v; askNote(); });
 }
 
@@ -785,8 +785,8 @@ async function askNote() {
   if (checkinDoneToday()) { clearPendingFlow(); await botSay(todayDoneLine()); return; }
   chatState = 'note';
   flowNagged = false;
-  await botSay('Koi chhota note hai aaj ke liye? Neeche likh sakte ho — ya "Note nahi hai" tap kar do.');
-  setChips([{ label: 'Note nahi hai', val: 'skip' }], async (it) => { meSay(it.label); finishChat(null); });
+  await botSay('Any small note for today? You can type it below — or tap "No note".');
+  setChips([{ label: 'No note', val: 'skip' }], async (it) => { meSay(it.label); finishChat(null); });
 }
 
 async function finishChat(noteText) {
@@ -794,15 +794,15 @@ async function finishChat(noteText) {
   // Aaj ka check-in kisi aur raaste se pehle hi poora ho chuka ho to stale draft se use mat badlo
   if (checkinDoneToday()) { clearPendingFlow(); await botSay(todayDoneLine()); return; }
   chatState = 'saving';
-  await botSay('Ek second — save kar raha hun…', 150);
-  const doneMsg = `Ho gaya ✅\nAaj ka record: Neend ${draft.sleep ? SLEEP_LABEL[draft.sleep] : '—'} · Naak band ${draft.nose}/10 · Sar dard ${draft.headache}/10`;
+  await botSay('One second — saving…', 150);
+  const doneMsg = `Done ✅\nToday's record: Sleep ${draft.sleep ? SLEEP_LABEL[draft.sleep] : '—'} · Blocked nose ${draft.nose}/10 · Headache ${draft.headache}/10`;
   if (!currentUser) {
     // Logged-out: record device par date-stamped save — aaj dobara check-in nahi
     // puchega, aur login par mergeLocalCheckin() ise account me mila dega.
     saveLocalCheckin({ date: localDateStr(), sleep: draft.sleep ?? null, nose: draft.nose ?? null, headache: draft.headache ?? null, note: noteText || null });
     chatState = 'idle'; flowDate = null; flowNagged = false;
     await botSay(doneMsg);
-    await botSay('Ye record abhi is device par save hai 🌿 Login karne par tumhare account me jud jayega. Aur aaj ke liye check-in dobara nahi puchhunga — kal phir milega.');
+    await botSay('This record is saved on this device for now 🌿 When you log in, it will join your account. And I will not ask for a check-in again today — see you tomorrow.');
     await botSay(tipFor(draft.nose, draft.headache));
     return;
   }
@@ -810,7 +810,7 @@ async function finishChat(noteText) {
     await saveCheckin({ date: localDateStr(), sleep: draft.sleep ?? null, nose: draft.nose, headache: draft.headache, note: noteText || null });
   } catch {
     chatState = 'idle';
-    await botSay('Arey — save nahi hua 😔 Net check karke "check-in" likh kar phir try karna.');
+    await botSay('Oh — it did not save 😔 Check your connection, type "check-in" and try again.');
     return;
   }
   chatState = 'idle'; flowDate = null; flowNagged = false;
@@ -820,15 +820,15 @@ async function finishChat(noteText) {
 
 function tipFor(nose, head) {
   if (nose >= 8 || head >= 8) {
-    return '⚠️ Ye number zyada hai. Guide ke khatre wale sanket yaad rakhna — aankh ke aas-paas soojan, tez bukhaar ya saans lene me dikkat ho to der bilkul mat karna: ghar par batao aur doctor ko dikhao.\nAaram ke liye: garam bhaap (steam) lo, aur saline (namak paani) se naak saaf karna madad karta hai.';
+    return '⚠️ This number is high. Remember the danger signs in the Guide — swelling around the eyes, high fever or trouble breathing means no delay at all: tell your family and see a doctor.\nFor comfort: take warm steam, and cleaning the nose with saline (salt water) can help.';
   }
   if (nose >= 5) {
-    return 'Naak kaafi band hai aaj 🤧 Sone se pehle bhaap (steam) ya saline rinse try karo, aur sir thoda uncha karke sona — raat ko band-pan kam lagega, neend gehri hogi to kal ki padhai bhi sambhalegi.';
+    return 'Your nose is quite blocked today 🤧 Try steam or a saline rinse before sleeping, and sleep with your head a little raised — the blockage feels less at night, and deeper sleep means better study tomorrow.';
   }
   if (nose >= 1) {
-    return 'Halki band hai — sambhal jayegi 🌿 Kamre ki dhool saaf rakhna aur thandi hawa seedha chehre par na lage, bas itna dhyaan kaafi hai.';
+    return 'Only slightly blocked — it should settle 🌿 Keep the room dust-free and do not let cold air hit your face directly; that much care is enough.';
   }
-  return 'Aaj naak bilkul saaf hai 🎉 Aise din hi badhne chahiye. Padhai par poora dhyaan do — Ortho record sambhal raha hai.';
+  return 'Your nose is completely clear today 🎉 May such days keep coming. Focus fully on your studies — Ortho is looking after the record.';
 }
 
 $('#chatSend').addEventListener('click', sendChatText);
@@ -838,13 +838,13 @@ async function chatWelcome() {
   // Welcome lines static hain — history me save NAHI hoti, warna har session me
   // restore ke upar dobara-tibara judti jayengi.
   await botSay(greetingLine(), 150, { skipPersist: true });
-  await botSay('Main ye kar sakta hun:\n• "check-in" likho — aaj ka record (neend, naak band, sar dard)\n• 📖 Guide tab — sinus ki seedhi, saaf jankari\n• 🩺 Doctors tab — apne doctors jodo, tap karke call\nAsli sawal-jawab ke liye Zara se WhatsApp par baat karna — wahan sawal pehle puchh kar samjhaya jata hai. Yahan bas likh do ya options tap kar do 🌿', 300, { skipPersist: true });
+  await botSay('Here is what I can do:\n• Type "check-in" — today\'s record (sleep, blocked nose, headache)\n• 📖 Guide tab — clear, simple health info\n• 🩺 Doctors tab — add your doctors, tap to call\nFor a real question-and-answer chat, talk to Zara on WhatsApp — there she asks questions first, then explains. Here, just type or tap the options 🌿', 300, { skipPersist: true });
 }
 
 const FALLBACKS = [
-  'Samajh gaya 🌿 Main khaas taur par in kaamo ke liye hun: "check-in" likho to aaj ka record bhar deta hun, 📖 Guide tab me sinus ki jankari hai, aur 🩺 Doctors tab me apne doctors jod sakte ho. Kya karna hai?',
-  'Ye wala sawal mere chhote se dayre ke bahar hai 😊 Lekin ye zaroor kar sakta hun — check-in record karna, Guide ki jankari dikhana, Doctors ki list kholna. "check-in" likhna hai to bas likh do.',
-  'Hmm, is par main pakka jawab nahi de sakta 🌿 Asli sawal-jawab ke liye Zara se WhatsApp par baat karo. Yahan main check-in, Guide aur Doctors me madad karta hun — bolo, kya chahiye?'
+  'Got it 🌿 I am mainly here for these things: type "check-in" and I will record today, the 📖 Guide tab has health info, and in the 🩺 Doctors tab you can add your doctors. What would you like to do?',
+  'That question is a little outside my small area 😊 But I can definitely do this — record a check-in, show Guide info, open your Doctors list. If you want a check-in, just type "check-in".',
+  'Hmm, I cannot answer that one for sure 🌿 For real question-and-answer, talk to Zara on WhatsApp. Here I help with check-in, Guide and Doctors — tell me, what do you need?'
 ];
 let lastFallback = -1;
 function nextFallback() {
@@ -879,7 +879,7 @@ function chatHistoryForAI() {
 function showTyping() {
   const div = document.createElement('div');
   div.className = 'msg bot typing';
-  div.textContent = 'Ortho soch raha hai…';
+  div.textContent = 'Ortho is thinking…';
   chatLog.appendChild(div); scrollChat();
   return div;
 }
@@ -912,7 +912,7 @@ async function askOrthoBrain(extraUserText) {
    Pending state: { stage: 'confirm', name } | { stage: 'await_name' } | null.
    Check-in trigger aate hi ye flow chup-chaap khatm ho jata hai (sendChatText step 1). */
 let pendingPhoto = null;
-const PHOTO_YES_RE = /^(haan|ha|han|ji|yes|yep|yup|sahi|hai|yehi|yahi|theek|thik|bilkul|ok)\b/;
+const PHOTO_YES_RE = /^(yes|yep|yup|correct|right|haan|ha|han|ji|sahi|hai|yehi|yahi|theek|thik|bilkul|ok)\b/;
 const PHOTO_NO_RE = /^(nahi|nahin|na|no|nope|galat|wrong)\b/;
 
 function meSayPhoto(dataUrl) {
@@ -920,13 +920,13 @@ function meSayPhoto(dataUrl) {
   div.className = 'msg me';
   const img = document.createElement('img');
   img.src = dataUrl;
-  img.alt = 'Dawai ki photo';
+  img.alt = 'Medicine photo';
   img.style.cssText = 'max-width:180px;max-height:240px;border-radius:10px;display:block';
   div.appendChild(img);
   chatLog.appendChild(div);
   // Photo ka data-URL history me NAHI rakha jata (bahut bada hota hai) — sirf ek
   // chhota nishan, taaki restore hui baat-cheet ka silsila samajh aata rahe.
-  persistChatMessage('user', '📷 Dawai ki photo');
+  persistChatMessage('user', '📷 Medicine photo');
   scrollChat();
 }
 
@@ -953,7 +953,7 @@ function downscaleImageFile(file) {
 }
 
 async function sendMedicineInfoQuery(name) {
-  const query = `Mujhe '${name}' dawai ke baare me jaankari do — ye kis kaam aati hai, aur iske baare me aam taur par kya jaanna chahiye?`;
+  const query = `Tell me about the medicine '${name}' — what is it used for, and what should one generally know about it? Answer in English.`;
   const typing = showTyping();
   try {
     const reply = await askOrthoBrain(query);
@@ -961,7 +961,7 @@ async function sendMedicineInfoQuery(name) {
     await botSay(reply, 150);
   } catch {
     typing.remove();
-    await botSay('Abhi jaankari nahi mil payi 😔 Net slow lag raha hai — thodi der baad dawai ka naam likh kar phir try karna, ya Zara se WhatsApp par puchh lena.');
+    await botSay('Could not get the info just now 😔 The connection looks slow — try again in a bit by typing the medicine name, or ask Zara on WhatsApp.');
   }
 }
 
@@ -973,7 +973,7 @@ async function handlePhotoPending(raw, t) {
     if (PHOTO_NO_RE.test(t)) {
       pendingPhoto = { stage: 'await_name' };
       meSay(raw);
-      await botSay('Theek hai, koi baat nahi 🌿 Dawai ka naam khud type karke bhej do — main usi ki jaankari de dunga.');
+      await botSay('No problem 🌿 Type the medicine name yourself and send it — I will give you its info.');
       return true;
     }
     if (PHOTO_YES_RE.test(t)) {
@@ -1007,13 +1007,13 @@ $('#chatPhoto').addEventListener('change', async (e) => {
   try {
     dataUrl = await downscaleImageFile(file);
   } catch {
-    await botSay('Photo khul nahi payi 😔 Ek baar phir photo chun kar bhejo, ya dawai ka naam type kar do — main jaankari de dunga.');
+    await botSay('The photo could not open 😔 Pick the photo once more, or type the medicine name — I will give you the info.');
     return;
   }
   meSayPhoto(dataUrl);
   if (!currentUser) {
     pendingPhoto = null;
-    await botSay('Photo mil gayi 📷 Lekin dawai ki pehchan login ke baad hi chalegi — pehle upar wale card se login kar lo, phir photo bhejna, main naam padh dunga 🌿');
+    await botSay('Got the photo 📷 But medicine identification works only after login — log in from the card above first, then send the photo and I will read the name 🌿');
     showLoginCard();
     return;
   }
@@ -1029,11 +1029,11 @@ $('#chatPhoto').addEventListener('change', async (e) => {
   if (!failed && data && typeof data.medicine_name === 'string' && data.medicine_name.trim().length >= 3) {
     const name = data.medicine_name.trim();
     pendingPhoto = { stage: 'confirm', name };
-    await botSay(`Photo me dawai ka naam ye padha maine: "${name}". Kya yehi dawai hai? 'Haan' ya 'Nahi' likho.`);
+    await botSay(`I read this medicine name in the photo: "${name}". Is this the right medicine? Type 'Yes' or 'No'.`);
   } else {
     // photo_unreadable ya invoke fail — ek hi graceful line, raw error kabhi nahi
     pendingPhoto = { stage: 'await_name' };
-    await botSay('Photo saaf nahi padhi gayi 😔 Roshni me, paas se dobara photo bhejo — ya dawai ka naam yahin type kar do, main usi ki jaankari de dunga.');
+    await botSay('The photo could not be read clearly 😔 Send the photo again in good light, from close — or type the medicine name here and I will give you its info.');
   }
 });
 
@@ -1100,26 +1100,26 @@ async function sendChatText() {
   let inFlow = flowPending() && ['sleep', 'nose', 'head'].includes(chatState);
   let flowNote = '';
   if (inFlow) {
-    if (!flowNagged) { flowNote = '\n\n(Wapas check-in par — upar diye options me se jawab tap kar do, main wahi ruka hun 🌿)'; flowNagged = true; }
+    if (!flowNagged) { flowNote = '\n\n(Back to the check-in — tap one of the options above, I am waiting there 🌿)'; flowNagged = true; }
     else { clearPendingFlow(); inFlow = false; }
   }
-  const loginLine = 'Ye jaankari tumhare account ke record me hai — dekhne ke liye login chahiye 🌿 Upar wale card se login link mangwa lo.';
+  const loginLine = 'This info is in your account record — you need to log in to see it 🌿 Get a login link from the card above.';
 
   // 4a) Personal data — sirf asal loaded record se jawab; data na ho to saaf mana, andaz kabhi nahi
   if (/(meri|mera) (dawai|dava|dawa|medicine|spray)/.test(t)) {
     if (!currentUser) await botSay(loginLine + flowNote);
     else if (profileData && profileData.medicine_name) {
-      await botSay(`Profile me tumne ye dawai likhi hai: ${profileData.medicine_name}${profileData.medicine_timing ? ' · Time: ' + profileData.medicine_timing : ''}\nYe sirf tumhari apni likhi hui jaankari hai — dawai ke kisi bhi badlaav ka faisla sirf doctor karega 🌿` + flowNote);
+      await botSay(`You have written this medicine in your Profile: ${profileData.medicine_name}${profileData.medicine_timing ? ' · Time: ' + profileData.medicine_timing : ''}\nThis is only the info you wrote yourself — any change to a medicine is decided only by a doctor 🌿` + flowNote);
     } else {
-      await botSay('Profile me abhi koi dawai likhi nahi hai — tumne bataya bhi tha ki abhi koi dawai chal nahi rahi 🌿 Doctor koi dawai de to Profile tab me naam aur time likh lena, yaad rahega.' + flowNote);
+      await botSay('No medicine is written in your Profile yet 🌿 If a doctor gives you a medicine, write its name and time in the Profile tab so it stays on record.' + flowNote);
     }
     return;
   }
   if (/(mera|mere) doctor|doctor ka (number|naam|phone|no)/.test(t)) {
     if (!currentUser) await botSay(loginLine + flowNote);
-    else if (!doctors.length) await botSay('Abhi doctors list khaali hai 🌿 🩺 Doctors tab me apna doctor add kar sakte ho.' + flowNote);
+    else if (!doctors.length) await botSay('Your doctors list is empty right now 🌿 You can add your doctor in the 🩺 Doctors tab.' + flowNote);
     else {
-      await botSay('Tumhare doctors 🩺:\n' + doctors.map((d) => `• ${d.name}${d.phone ? ' — ' + d.phone : ''}`).join('\n') + '\nCall karne ke liye 🩺 Doctors tab me number par tap karo.' + flowNote);
+      await botSay('Your doctors 🩺:\n' + doctors.map((d) => `• ${d.name}${d.phone ? ' — ' + d.phone : ''}`).join('\n') + '\nTo call, tap the number in the 🩺 Doctors tab.' + flowNote);
     }
     return;
   }
@@ -1128,7 +1128,7 @@ async function sendChatText() {
     else {
       const rows = checkins.filter((r) => r.nose != null);
       if (rows.length < 2) {
-        await botSay(`Trend dekhne ke liye kam se kam 2 din ka record chahiye 🌿 Abhi ${rows.length} din ka number hai — roz "check-in" karte raho, pattern khud saaf hoga.` + flowNote);
+        await botSay(`A trend needs at least 2 days of records 🌿 Right now there are ${rows.length} day(s) — keep doing a daily "check-in" and the pattern will become clear.` + flowNote);
       } else {
         const last7 = rows.slice(0, 7);
         const avgOf = (arr) => arr.reduce((a, r) => a + r.nose, 0) / arr.length;
@@ -1137,57 +1137,57 @@ async function sendChatText() {
         const olderAvg = avgOf(last7.slice(half));
         let dir;
         if (!last7.slice(half).length) dir = '';
-        else if (olderAvg - recentAvg > 0.5) dir = `\nPehle wale dino ke muqable (avg ${olderAvg.toFixed(1)}) ab naak band ke number kam aaye hain (avg ${recentAvg.toFixed(1)}) 🌿`;
-        else if (recentAvg - olderAvg > 0.5) dir = `\nPehle wale dino ke muqable (avg ${olderAvg.toFixed(1)}) in dino naak band ke number zyada aaye hain (avg ${recentAvg.toFixed(1)}) 🤧 Ye pattern doctor ko dikhane me kaam aayega — isiliye record zaroori hai.`;
-        else dir = `\nPehle ke muqable lagbhag waisa hi chal raha hai (avg ${recentAvg.toFixed(1)}) — number na zyada upar, na neeche.`;
-        await botSay(`Pichhle ${last7.length} check-ins me average naak band ${avgOf(last7).toFixed(1)}/10 raha.${dir}\nPoora graph 📈 Record tab me hai.` + flowNote);
+        else if (olderAvg - recentAvg > 0.5) dir = `\nCompared to the earlier days (avg ${olderAvg.toFixed(1)}), the blocked-nose numbers are lower now (avg ${recentAvg.toFixed(1)}) 🌿`;
+        else if (recentAvg - olderAvg > 0.5) dir = `\nCompared to the earlier days (avg ${olderAvg.toFixed(1)}), the blocked-nose numbers are higher these days (avg ${recentAvg.toFixed(1)}) 🤧 This pattern will help when you show it to a doctor — that is why the record matters.`;
+        else dir = `\nIt is running about the same as before (avg ${recentAvg.toFixed(1)}) — the number is neither much higher nor lower.`;
+        await botSay(`Across the last ${last7.length} check-ins, the average blocked nose was ${avgOf(last7).toFixed(1)}/10.${dir}\nThe full graph is in the 📈 Record tab.` + flowNote);
       }
     }
     return;
   }
   if (/(last|pichla|pichhla|aakhri)\s*(check|record)|kal\s*(ka|ki|wala|wali)\s*(check|record|haal)|kal naak kaisi thi|mera (last|pichla)/.test(t)) {
     if (!currentUser) await botSay(loginLine + flowNote);
-    else if (!checkins.length) await botSay('Abhi koi check-in record nahi hai 🌿 Pehla record bharne ke liye "check-in" likho.' + flowNote);
+    else if (!checkins.length) await botSay('There is no check-in record yet 🌿 Type "check-in" to make your first record.' + flowNote);
     else {
       const r = checkins[0];
-      await botSay(`Tumhara last check-in ${fmtDate(r.date)} ka hai:\n👃 Naak band: ${r.nose ?? '—'}/10 · 🤕 Sar dard: ${r.headache ?? '—'}/10${r.sleep ? '\nNeend: ' + SLEEP_LABEL[r.sleep] : ''}${r.note ? '\n📝 Note: ' + r.note : ''}\nPoora record 📈 Record tab me hai.` + flowNote);
+      await botSay(`Your last check-in is from ${fmtDate(r.date)}:\n👃 Blocked nose: ${r.nose ?? '—'}/10 · 🤕 Headache: ${r.headache ?? '—'}/10${r.sleep ? '\nSleep: ' + SLEEP_LABEL[r.sleep] : ''}${r.note ? '\n📝 Note: ' + r.note : ''}\nThe full record is in the 📈 Record tab.` + flowNote);
     }
     return;
   }
 
   // 4b) Sinus FAQ — general jankari (sinus-deep-guide se), possibility language, koi diagnosis nahi
-  const GUIDE_END = '\nPoori detail Guide tab me hai.';
+  const GUIDE_END = '\nFull detail is in the Guide tab.';
   if (/(khatr|danger|red flag|emergency|maathe.*soojan|aankh.*soojan|soojan.*aankh|gardan.*akdan)/.test(t)) {
-    await botSay('⚠️ Khatre ke sanket — inme der bilkul nahi, turant ghar par batao aur doctor ko dikhao:\n• Aankh ke aas-paas soojan, aankh dard, ya dhundla/dohra dikhna\n• Maathe par soojan, ya badhta hua tez sar dard\n• Tez bukhaar ke saath chehre par tez dard-soojan\n• Gardan me akdan\nYe sanket hon to intezaar nahi — seedha doctor.' + GUIDE_END + flowNote);
+    await botSay('⚠️ Danger signs — no delay with these, tell your family at once and see a doctor:\n• Swelling around the eyes, eye pain, or blurred/double vision\n• Swelling on the forehead, or a severe headache that keeps growing\n• High fever with severe pain and swelling in the face\n• Stiffness in the neck\nIf any of these appear, do not wait — go straight to a doctor.' + GUIDE_END + flowNote);
     return;
   }
   if (/(saline|namak (paani|pani)|neti|rinse|naak dhona|naak saaf kar)/.test(t)) {
-    await botSay('Saline rinse matlab namak paani se naak saaf karna 🌿 Ye mucus ko patla karke sinus ke raste kholne me madad kar sakta hai — doctors aam taur par iski salah dete hain.\n⚠️ Sabse zaroori safety: paani hamesha ubla-thanda kiya hua (ya sterile) ho — seedha nal ka paani kabhi nahi.' + GUIDE_END + flowNote);
+    await botSay('A saline rinse means cleaning the nose with salt water 🌿 It can thin the mucus and help open the sinus passages — doctors commonly advise it.\n⚠️ The most important safety point: the water must always be boiled-then-cooled (or sterile) — never straight tap water.' + GUIDE_END + flowNote);
     return;
   }
   if (/(spray (kaise|lagane|lagana|istemal|use kar)|spray ka tareeka|spray tareeka)/.test(t)) {
-    await botSay('Spray ka sahi tareeka 🌿 Pehle naak saaf karo, phir nozzle ko naak ki bahar wali deewaar ki taraf rakho — seedha beech wali haddi (septum) ki taraf nahi, warna roz ke istemal se naak se khoon aa sakta hai.\nHalki saans lete hue spray karo, zor se soonghna nahi aur sir peeche mat jhukao.\nSteroid spray ka asar turant nahi aata — roz sahi istemal par 1–2 hafte me poora asar dikh sakta hai; beech me chhod dena sabse aam galti hai.' + GUIDE_END + flowNote);
+    await botSay('The right way to use a spray 🌿 Clean the nose first, then point the nozzle toward the outer wall of the nose — not straight at the middle bone (septum), or daily use can cause nosebleeds.\nSpray while breathing in gently; do not sniff hard and do not tilt your head back.\nA steroid spray does not work instantly — used correctly every day, its full effect can show in 1–2 weeks; stopping in between is the most common mistake.' + GUIDE_END + flowNote);
     return;
   }
   if (/(sinus (kya|hota|hote|hai)|sinusitis (kya|hota))/.test(t)) {
-    await botSay('Sinus khopdi ki haddiyon ke andar hawa bhari 4 jodi gufaayein (cavities) hain — gaalon me, maathe me, aankhon ke beech aur naak ke peeche 🌿\nYe saans ki hawa ko garam-nam karte hain, awaaz ko gunj dete hain aur mucus bana kar naak saaf rakhte hain.\nJab inke chhote raste band ho jayein to mucus andar fas sakta hai — wahi se band naak aur bhaari-pan shuru ho sakta hai.' + GUIDE_END + flowNote);
+    await botSay('Sinuses are 4 pairs of air-filled cavities inside the skull bones — in the cheeks, the forehead, between the eyes and behind the nose 🌿\nThey warm and moisten the air you breathe, give the voice its resonance, and make mucus that keeps the nose clean.\nWhen their small passages get blocked, mucus can get trapped inside — that is where a blocked nose and heaviness can begin.' + GUIDE_END + flowNote);
     return;
   }
   if (/(naak band kyun|naak (kyun|kyu) band|band kyun hoti|allergy (se|me|kaise)|allergen)/.test(t)) {
-    await botSay('Ho sakta hai iski wajah allergy ho 🌿 Dhool, pollen ya thandi hawa jaisa allergen naak ki andar wali chamdi (mucosa) ko chhuta hai to body histamine jaise chemical chhodti hai — mucosa phool jati hai aur mucus zyada banta hai.\nPhooli hui mucosa sinus ke chhote raste band kar sakti hai aur andar dabaav ban sakta hai — isiliye band naak ke saath maathe/gaalon me bhaari-pan ho sakta hai.' + GUIDE_END + flowNote);
+    await botSay('It may be caused by an allergy 🌿 When an allergen like dust, pollen or cold air touches the inner lining of the nose (the mucosa), the body releases chemicals like histamine — the mucosa swells and more mucus is made.\nThe swollen mucosa can block the small sinus passages and build pressure inside — that is why a blocked nose can come with heaviness in the forehead and cheeks.' + GUIDE_END + flowNote);
     return;
   }
   if (/(ent|doctor ko kab|kab dikhana|kab dikhayen|kab jaana chahiye|kab jana chahiye)/.test(t)) {
-    await botSay('ENT ko dikhana tab khaas zaroori ho sakta hai jab takleef lambe samay se chal rahi ho, baar-baar wapas aa rahi ho ya ghar ke upaayon se aaram na mil raha ho 🌿\nDoctor naak ke andar endoscopy se dekh sakta hai; zaroorat ho to CT scan ya allergy test bhi ho sakta hai — asal wajah wahi se saaf hoti hai.\n🩺 Doctors tab me apna doctor jod sakte ho — number par tap karke seedha call lagegi.' + GUIDE_END + flowNote);
+    await botSay('Seeing an ENT becomes especially important when the problem has been going on for a long time, keeps coming back, or home care is not helping 🌿\nThe doctor can look inside the nose with an endoscopy; if needed, a CT scan or an allergy test can also be done — that is how the real cause becomes clear.\nYou can add your doctor in the 🩺 Doctors tab — tap the number to call directly.' + GUIDE_END + flowNote);
     return;
   }
   if (/(neend.*(tip|salah|ke liye)|sone ke|padhai.*(tip|salah)|study.*(tip|focus)|dhyaan)/.test(t)) {
-    await botSay('Neend aur padhai ke liye aam salah 🌿 Sone se pehle saline rinse karna aur sir thoda uncha (extra takiya) karke sona — raat ko band-pan kam mehsoos ho sakta hai; neend gehri ho to agle din dhyaan bhi behtar reh sakta hai.\nKamre ki dhool saaf rakhna aur bistar hafte me dhona dust-mite allergy me sabse zyada kaam kar sakta hai. AC ya thandi hawa seedha chehre par na lage.' + GUIDE_END + flowNote);
+    await botSay('General tips for sleep and study 🌿 A saline rinse before sleeping and sleeping with your head a little raised (an extra pillow) — the blockage can feel less at night; deeper sleep can also mean better focus the next day.\nKeeping the room dust-free and washing the bedding weekly can help the most in dust-mite allergy. Do not let AC or cold air blow straight onto your face.' + GUIDE_END + flowNote);
     return;
   }
 
   if (/^(assalamualaikum|hi+|hello|hey|namaste|salam|aoa)\b/.test(t)) {
-    await botSay('Namaste 🌤️ Main theek hun, tum batao — aaj naak kaisi hai?\n"check-in" likho to record kar deta hun, ya Guide / Doctors tab dekh lo.' + flowNote);
+    await botSay('Hello 🌤️ I am good — how is your nose today?\nType "check-in" and I will record it, or look at the Guide / Doctors tabs.' + flowNote);
     return;
   }
   // Dawai ke sawal — pehle yahan ek bada catch-all tha jo har dawai-ish shabd par local
@@ -1199,12 +1199,12 @@ async function sendChatText() {
   // beech wale symptom/guide intents use na rok dein, isiliye brain yahin bulaya jata hai.
   // (c) logged-out jaankari sawal par login ki taraf — jaankari login ke baad AI se milti hai.
   if (MED_RX_RE.test(t) && !currentUser) {
-    await botSay('Dawai wala sawal samajh sakta hun — lekin iska jawab main nahi de sakta 🌿\nDawai ka faisla — kaunsi, kitni, kab tak — sirf doctor karte hain, kyunki wo tumhari naak dekh kar aur purani report samajh kar faisla lete hain. Galat dawai faayde ki jagah nuksaan kar sakti hai.\nTum ye kar sakte ho:\n• 🩺 Doctors tab — apna doctor jodo, naam ke paas wale number se seedha call lag jayegi\n• 📖 Guide tab — sinus aur spray ke sahi tareeke ki general jankari\n• Asal sawal-jawab ke liye Zara se WhatsApp par baat karo — wahan main sawal pehle puchh kar samjhati hun.' + flowNote);
+    await botSay('I understand the medicine question — but I cannot answer that one 🌿\nThe decision about a medicine — which one, how much, for how long — is made only by doctors, because they decide after examining you and understanding your reports. The wrong medicine can harm instead of help.\nHere is what you can do:\n• 🩺 Doctors tab — add your doctor; tap the number to call directly\n• 📖 Guide tab — general info on sinus and the right way to use a spray\n• For real question-and-answer, talk to Zara on WhatsApp — there she asks questions first, then explains.' + flowNote);
     return;
   }
   if (MED_RX_RE.test(t) || MED_INFO_RE.test(t)) {
     if (!currentUser) {
-      await botSay('Dawai ki jaankari ke liye pehle login karna hoga 🌿 Login ke baad kisi bhi dawai ke baare me AI se jaankari mil jayegi — kis kaam aati hai, aam taur par kya dhyaan rakhna chahiye. Upar wale card se login link mangwa lo.' + flowNote);
+      await botSay('Medicine info needs a login first 🌿 After login, the AI can tell you about any medicine — what it is used for and what one should generally keep in mind. Get a login link from the card above.' + flowNote);
       showLoginCard();
       return;
     }
@@ -1221,26 +1221,26 @@ async function sendChatText() {
     return;
   }
   if (/(doctor|ent|hospital|clinic|appointment)/.test(t)) {
-    await botSay('Doctors ki list 🩺 Doctors tab me hai — wahan apne doctors jod sakte ho, number par tap karte hi call lag jayegi 🌿' + flowNote);
+    await botSay('Your doctors list is in the 🩺 Doctors tab — you can add your doctors there, and tapping a number calls directly 🌿' + flowNote);
     return;
   }
   if (/(naak|band|sar dard|sardard|headache|sinus|zukam|cold|sardi|bukhaar|fever|neend|khaansi|khansi|gala)/.test(t)) {
-    await botSay('Sun kar afsos hua 🤧 Apna haal record kar lo to pattern saaf dikhega — "check-in" likho, main 3 chhote sawal puchh lunga.\nUs topic ki general jankari 📖 Guide tab me bhi hai. Aur haan — aankh ke aas-paas soojan, tez bukhaar ya saans ki dikkat ho to intezaar mat karna, ghar par bata kar doctor ko dikhana.' + flowNote);
+    await botSay('Sorry to hear that 🤧 Record how you feel and the pattern will become clear — type "check-in" and I will ask 3 small questions.\nGeneral info on this topic is also in the 📖 Guide tab. And yes — if there is swelling around the eyes, high fever or trouble breathing, do not wait: tell your family and see a doctor.' + flowNote);
     return;
   }
   if (/(record|history|pattern|graph|chart|purana)/.test(t)) {
-    await botSay('Tumhara pattern 📈 Record tab me hai — roz ke number, average aur graph ke saath. ' + (currentUser ? 'Neeche Record tap karke dekh lo.' : 'Record dekhne ke liye login chahiye — upar wale card se link mangwa lo.') + flowNote);
+    await botSay('Your pattern is in the 📈 Record tab — with daily numbers, averages and the graph. ' + (currentUser ? 'Tap Record below to see it.' : 'You need to log in to see the record — get a link from the card above.') + flowNote);
     return;
   }
   if (/(guide|jankari|jaankari|padhna|samjhao|batao)/.test(t)) {
-    await botSay('Sinus ki saari general jankari 📖 Guide tab me hai — sinus kya hota hai, spray ka sahi tareeka, ghar par dekhbhaal aur khatre ke sanket. Neeche Guide tap karo 🌿' + flowNote);
+    await botSay('All the general sinus info is in the 📖 Guide tab — what sinuses are, the right spray technique, home care and danger signs. Tap Guide below 🌿' + flowNote);
     return;
   }
 
   // 5) Kuch samajh na aaye — flow me ho to pending sawal ki taraf.
   //    Warna: logged-in user ke liye AI brain (ortho-chat); fail ho to ghumta hua local fallback.
   if (inFlow) {
-    await botSay('Is sawal ka jawab upar ke options se tap kar do 🌿 — ya naya shuru karna ho to "check-in" likho.');
+    await botSay('Please answer this question by tapping one of the options above 🌿 — or type "check-in" to start fresh.');
     return;
   }
   if (currentUser) {
@@ -1379,7 +1379,7 @@ async function clearChatHistory() {
     // local history logout ke baad wapas aa sakti thi. FULL clean = dono.
     try { localStorage.removeItem(LOCAL_CHAT_KEY); } catch {}
   } catch {
-    await botSay('Chat saaf nahi ho payi 😔 Net check karke phir try karo.', 150, { skipPersist: true });
+    await botSay('Could not clear the chat 😔 Check your connection and try again.', 150, { skipPersist: true });
     return;
   }
   pendingPhoto = null;

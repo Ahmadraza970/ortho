@@ -7,13 +7,27 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import webpush from "npm:web-push@3.6.7";
 
 const TITLE = "Ortho 🌤️";
-const BODY = "Subah ho gayi Ahmad 🌤️ Naak kaisi hai aaj? 2 minute me check-in kar lo — Ortho";
+const BODY = "Good morning 🌤️ How is your nose today? Do your 2-minute check-in — Ortho";
+
+const ALLOWED_ORIGINS = ["https://orthodoctorr.vercel.app", "https://ortho-lac-seven.vercel.app"];
+
+function corsFor(req: Request) {
+  const origin = req.headers.get("Origin") ?? "";
+  return {
+    "Access-Control-Allow-Origin": ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0],
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-push-secret",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+}
 
 Deno.serve(async (req) => {
-  if (req.method !== "POST") return new Response("POST only", { status: 405 });
+  const cors = corsFor(req);
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  if (req.method !== "POST") return new Response("POST only", { status: 405, headers: cors });
   const secret = Deno.env.get("PUSH_CRON_SECRET");
   if (!secret || req.headers.get("x-push-secret") !== secret) {
-    return new Response("Unauthorized", { status: 401 });
+    return new Response("Unauthorized", { status: 401, headers: cors });
   }
 
   const supabase = createClient(
@@ -28,10 +42,10 @@ Deno.serve(async (req) => {
   );
 
   const { data: subs, error } = await supabase.from("push_subscriptions").select("*");
-  if (error) return Response.json({ ok: false, error: error.message }, { status: 500 });
+  if (error) return Response.json({ ok: false, error: error.message }, { status: 500, headers: cors });
 
   const payload = JSON.stringify({ title: TITLE, body: BODY, url: "/?tab=chat" });
-  let sent = 0, cleaned = 0;
+  let sent = 0, cleaned = 0, failed = 0;
   for (const s of subs ?? []) {
     try {
       await webpush.sendNotification(
@@ -44,8 +58,11 @@ Deno.serve(async (req) => {
       if (code === 404 || code === 410) {
         await supabase.from("push_subscriptions").delete().eq("id", s.id);
         cleaned++;
+      } else {
+        failed++;
+        console.error("push send fail:", code, (e as Error)?.message ?? String(e));
       }
     }
   }
-  return Response.json({ ok: true, sent, cleaned, total: subs?.length ?? 0 });
+  return Response.json({ ok: true, sent, cleaned, failed, total: subs?.length ?? 0 }, { headers: cors });
 });
