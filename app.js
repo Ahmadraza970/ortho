@@ -295,6 +295,10 @@ async function loadEverything() {
     // list me kuchh nahi dala jayega (Ahmad ka order, 2026-11-10).
     profileData = p.data || null;
     if (p.data) {
+      $('#pTakleef').value = p.data.takleef || '';
+      $('#pSince').value = p.data.since_when || '';
+      $('#pPrev').value = p.data.prev_treatment || '';
+      $('#pSymptoms').value = p.data.symptoms || '';
       $('#pMed').value = p.data.medicine_name || '';
       $('#pMedTime').value = p.data.medicine_timing || '';
       $('#pNote').value = p.data.note || '';
@@ -495,9 +499,26 @@ $('#googleLinkBtn').addEventListener('click', async () => {
   }
 });
 
-/* "Meri takleef" card ki dawa wali line hamesha form ke current data se bane —
-   pehle ye static thi, save ke baad bhi purani dikhti thi (QA 2026-11-10). */
+/* "Meri takleef" card hamesha user ke APNE saved data se bane — pehle Ahmad
+   ki jaankari static HTML me sab ko dikhti thi (uske order par 2026-11-10 ko
+   per-account kar diya). Jo field khaali ho, uski line chhupi rehti hai; sab
+   khaali hon to ek imaandaar empty-state line dikhti hai. */
 function renderProfileCard() {
+  const setRow = (id, label, val) => {
+    const el = $(id);
+    if (!el) return false;
+    const v = (val || '').trim();
+    el.hidden = !v;
+    if (v) el.innerHTML = `<b>${label}:</b> ${escapeHtml(v)}`;
+    return !!v;
+  };
+  const any =
+    setRow('#pfTakleef', 'Takleef', $('#pTakleef').value) |
+    setRow('#pfSince', 'Kab se', $('#pSince').value) |
+    setRow('#pfPrev', 'Pehle ka ilaaz', $('#pPrev').value) |
+    setRow('#pfSymptoms', 'Lakshan', $('#pSymptoms').value);
+  const emptyEl = $('#pfEmpty');
+  if (emptyEl) emptyEl.hidden = !!any;
   const el = $('#pfMedLine');
   if (!el) return;
   const med = ($('#pMed').value || '').trim();
@@ -512,12 +533,16 @@ $('#profileForm').addEventListener('submit', async (e) => {
   if (!currentUser) { msg($('#profileMsg'), 'Save karne ke liye pehle login karo — upar wale card se login link mangwao.', true); showLoginCard(); return; }
   const { error } = await supabase.from('profiles').upsert({
     user_id: currentUser.id,
+    takleef: $('#pTakleef').value.trim() || null,
+    since_when: $('#pSince').value.trim() || null,
+    prev_treatment: $('#pPrev').value.trim() || null,
+    symptoms: $('#pSymptoms').value.trim() || null,
     medicine_name: $('#pMed').value.trim() || null,
     medicine_timing: $('#pMedTime').value.trim() || null,
     note: $('#pNote').value.trim() || null,
     updated_at: new Date().toISOString()
   });
-  if (!error) { profileData = { ...(profileData || {}), medicine_name: $('#pMed').value.trim() || null, medicine_timing: $('#pMedTime').value.trim() || null }; renderProfileCard(); }
+  if (!error) { profileData = { ...(profileData || {}), takleef: $('#pTakleef').value.trim() || null, since_when: $('#pSince').value.trim() || null, prev_treatment: $('#pPrev').value.trim() || null, symptoms: $('#pSymptoms').value.trim() || null, medicine_name: $('#pMed').value.trim() || null, medicine_timing: $('#pMedTime').value.trim() || null }; renderProfileCard(); }
   msg($('#profileMsg'), error ? 'Save nahi hua — phir try karo.' : '✅ Save ho gaya!', !!error);
 });
 

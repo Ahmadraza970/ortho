@@ -156,3 +156,11 @@ main{max-width:640px; margin:0 auto; padding:18px 16px 110px}
 .fact-list li{padding:7px 0; border-bottom:1px solid var(--soft)}
 .fact-list li:last-child{border-bottom:none}
 @media (min-width:560px){ .summary-grid{grid-template-columns:repeat(4,1fr)} }
+
+/* ---------- smoothness (Ahmad: "app ko smooth karo", 2026-11-10) ---------- */
+button, .chip, .tab-btn, input, textarea, select{ touch-action: manipulation; }
+.tab-btn, .chip, .btn-send, .btn-primary{ user-select:none; -webkit-user-select:none; }
+body{ overscroll-behavior-y:none; }
+.tab-page:not([hidden]){ animation: pageIn .18s ease both; }
+@keyframes pageIn{ from{ opacity:0; transform:translateY(4px) } to{ opacity:1; transform:none } }
+@media (prefers-reduced-motion: reduce){ .tab-page:not([hidden]){ animation:none } }

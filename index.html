@@ -13,6 +13,8 @@
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://zntlrupnmszanorolgga.supabase.co" crossorigin>
+<link rel="dns-prefetch" href="https://zntlrupnmszanorolgga.supabase.co">
 <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -169,16 +171,21 @@
       <div class="card">
         <h3>Meri takleef</h3>
         <ul class="fact-list">
-          <li><b>Takleef:</b> Allergic sinusitis</li>
-          <li><b>Kab se:</b> Lagbhag 1.5 saal se</li>
-          <li><b>Pehle ka ilaaz:</b> Spray + dawa karwaya tha — theek nahi hua</li>
+          <li id="pfEmpty"><b>Abhi khaali hai:</b> neeche wale form me apni takleef bhar do — wahi yahan sirf tumhe dikhegi.</li>
+          <li id="pfTakleef" hidden></li>
+          <li id="pfSince" hidden></li>
+          <li id="pfPrev" hidden></li>
           <li id="pfMedLine"><b>Abhi ki dawa:</b> Koi dawa nahi chal rahi</li>
-          <li><b>Agla kadam:</b> ENT doctor se salah — list aur number 🩺 Doctors tab me hai</li>
-          <li><b>Lakshan:</b> Bar-bar sardi, band naak, sar dard — padhai par asar padta hai</li>
+          <li><b>Agla kadam:</b> Apne doctor se salah — list aur number 🩺 Doctors tab me hai</li>
+          <li id="pfSymptoms" hidden></li>
         </ul>
       </div>
       <form id="profileForm" class="card form-card">
         <h3>Apni jaankari badlo</h3>
+        <div class="field"><label for="pTakleef">Takleef</label><input id="pTakleef" type="text" placeholder="Jaise: allergic sinusitis"></div>
+        <div class="field"><label for="pSince">Kab se hai</label><input id="pSince" type="text" placeholder="Jaise: lagbhag 1.5 saal se"></div>
+        <div class="field"><label for="pPrev">Pehle ka ilaaz</label><input id="pPrev" type="text" placeholder="Jo ilaaz karwaya tha"></div>
+        <div class="field"><label for="pSymptoms">Lakshan</label><input id="pSymptoms" type="text" placeholder="Jaise: band naak, sar dard"></div>
         <div class="field"><label for="pMed">Abhi ki dawa ka naam <span class="opt">(doctor de to likhna)</span></label><input id="pMed" type="text" placeholder="Abhi koi dawa nahi"></div>
         <div class="field"><label for="pMedTime">Dawa ka time</label><input id="pMedTime" type="text" placeholder="Jaise: subah 8 baje, raat 9 baje"></div>
         <div class="field"><label for="pNote">Apni note</label><textarea id="pNote" rows="3" placeholder="Jo yaad rakhna ho…"></textarea></div>
