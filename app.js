@@ -141,23 +141,11 @@ async function afterLogin() {
   // user object kabhi-kabhi purana ho sakta hai, Profile ka Google state isi par tikta hai.
   const { data: fresh } = await supabase.auth.getUser();
   if (fresh?.user) { currentUser = fresh.user; renderGoogleLink(fresh.user); }
-  await ensureSeedCheckin();
   await mergeLocalCheckin();
   await migrateLocalChatHistory();
   await loadEverything();
   await restoreChatHistory();
   if (!seeded) { seeded = true; startChat(true); }
-}
-
-async function ensureSeedCheckin() {
-  // Ahmad ka asal pehla record (WhatsApp se, 2026-11-09): naak band 4. Sirf tab jodo jab us din ka koi record na ho.
-  const { data } = await supabase.from('checkins').select('id').eq('date', '2026-11-09').maybeSingle();
-  if (!data) {
-    await supabase.from('checkins').insert({
-      user_id: currentUser.id, date: '2026-11-09', nose: 4,
-      note: 'Pehla record — WhatsApp par bataya tha (9 Nov, shaam).'
-    });
-  }
 }
 
 /* Logged-out haalat me chat check-in device par (localStorage, date-stamped) save
@@ -302,7 +290,9 @@ async function loadEverything() {
         try { await supabase.from('doctors').delete().in('id', dupeIds).eq('user_id', currentUser.id); } catch {}
       }
     }
-    if (!doctors.length) { await seedDoctors(); }
+    // Koi auto-seed NAHI: har user apne doctors khud jodta hai. Ahmad ke
+    // doctors uske apne account me pehle se saved hain — dusro ke khaali
+    // list me kuchh nahi dala jayega (Ahmad ka order, 2026-11-10).
     profileData = p.data || null;
     if (p.data) {
       $('#pMed').value = p.data.medicine_name || '';
@@ -316,22 +306,6 @@ async function loadEverything() {
     renderRecord();
   })();
   try { await loadInFlight; } finally { loadInFlight = null; }
-}
-
-let seedInFlight = false;
-async function seedDoctors() {
-  if (seedInFlight) return; // do-baar seed = duplicate doctors (QA 2026-11-10)
-  seedInFlight = true;
-  try {
-    const defaults = [
-      { name: 'Dr. Samresh Kashyap', detail: 'MS-ENT · 21 saal ka tajurba', place: 'Shankar Niwas, Nasriganj Road, Bikramganj 802212 (Dehri + Sasaram bhi)', phone: '+917982192014', note: 'Pehle phone karke Bikramganj wala din confirm karna.' },
-      { name: 'Dr. Manoranjan Kumar', detail: 'MS-ENT · 23 saal ka tajurba', place: 'Pinnacle Hospital, Rajendra Nagar, Patna', phone: '9304956487', note: '' },
-      { name: 'AIIMS Patna — ENT OPD', detail: 'Sarkaari hospital · ENT department', place: 'AIIMS Patna', phone: '+916122451070', note: 'OPD Mon–Fri, subah 08:00–12:30. Online registration: ors.gov.in' }
-    ];
-    const rows = defaults.map((x) => ({ ...x, user_id: currentUser.id }));
-    const { data } = await supabase.from('doctors').insert(rows).select();
-    doctors = data || defaults;
-  } finally { seedInFlight = false; }
 }
 
 async function saveCheckin(payload) {
@@ -839,11 +813,11 @@ async function chatWelcome() {
   // Welcome lines static hain — history me save NAHI hoti, warna har session me
   // restore ke upar dobara-tibara judti jayengi.
   await botSay(greetingLine(), 150, { skipPersist: true });
-  await botSay('Main ye kar sakta hun:\n• "check-in" likho — aaj ka record (neend, naak band, sar dard)\n• 📖 Guide tab — sinus ki seedhi, saaf jankari\n• 🩺 Doctors tab — tumhare 3 ENT doctors, tap karke call\nAsli sawal-jawab ke liye Zara se WhatsApp par baat karna — wahan sawal pehle puchh kar samjhaya jata hai. Yahan bas likh do ya options tap kar do 🌿', 300, { skipPersist: true });
+  await botSay('Main ye kar sakta hun:\n• "check-in" likho — aaj ka record (neend, naak band, sar dard)\n• 📖 Guide tab — sinus ki seedhi, saaf jankari\n• 🩺 Doctors tab — apne doctors jodo, tap karke call\nAsli sawal-jawab ke liye Zara se WhatsApp par baat karna — wahan sawal pehle puchh kar samjhaya jata hai. Yahan bas likh do ya options tap kar do 🌿', 300, { skipPersist: true });
 }
 
 const FALLBACKS = [
-  'Samajh gaya 🌿 Main khaas taur par in kaamo ke liye hun: "check-in" likho to aaj ka record bhar deta hun, 📖 Guide tab me sinus ki jankari hai, aur 🩺 Doctors tab me tumhare ENT doctors hain. Kya karna hai?',
+  'Samajh gaya 🌿 Main khaas taur par in kaamo ke liye hun: "check-in" likho to aaj ka record bhar deta hun, 📖 Guide tab me sinus ki jankari hai, aur 🩺 Doctors tab me apne doctors jod sakte ho. Kya karna hai?',
   'Ye wala sawal mere chhote se dayre ke bahar hai 😊 Lekin ye zaroor kar sakta hun — check-in record karna, Guide ki jankari dikhana, Doctors ki list kholna. "check-in" likhna hai to bas likh do.',
   'Hmm, is par main pakka jawab nahi de sakta 🌿 Asli sawal-jawab ke liye Zara se WhatsApp par baat karo. Yahan main check-in, Guide aur Doctors me madad karta hun — bolo, kya chahiye?'
 ];
@@ -1179,7 +1153,7 @@ async function sendChatText() {
     return;
   }
   if (/(ent|doctor ko kab|kab dikhana|kab dikhayen|kab jaana chahiye|kab jana chahiye)/.test(t)) {
-    await botSay('ENT ko dikhana tab khaas zaroori ho sakta hai jab takleef lambe samay se chal rahi ho, baar-baar wapas aa rahi ho ya ghar ke upaayon se aaram na mil raha ho 🌿\nDoctor naak ke andar endoscopy se dekh sakta hai; zaroorat ho to CT scan ya allergy test bhi ho sakta hai — asal wajah wahi se saaf hoti hai.\nTumhare case me doctor ki talaash chal hi rahi hai — 🩺 Doctors tab me 3 ENT ki list taiyaar hai.' + GUIDE_END + flowNote);
+    await botSay('ENT ko dikhana tab khaas zaroori ho sakta hai jab takleef lambe samay se chal rahi ho, baar-baar wapas aa rahi ho ya ghar ke upaayon se aaram na mil raha ho 🌿\nDoctor naak ke andar endoscopy se dekh sakta hai; zaroorat ho to CT scan ya allergy test bhi ho sakta hai — asal wajah wahi se saaf hoti hai.\n🩺 Doctors tab me apna doctor jod sakte ho — number par tap karke seedha call lagegi.' + GUIDE_END + flowNote);
     return;
   }
   if (/(neend.*(tip|salah|ke liye)|sone ke|padhai.*(tip|salah)|study.*(tip|focus)|dhyaan)/.test(t)) {
@@ -1200,7 +1174,7 @@ async function sendChatText() {
   // beech wale symptom/guide intents use na rok dein, isiliye brain yahin bulaya jata hai.
   // (c) logged-out jaankari sawal par login ki taraf — jaankari login ke baad AI se milti hai.
   if (MED_RX_RE.test(t) && !currentUser) {
-    await botSay('Dawai wala sawal samajh sakta hun — lekin iska jawab main nahi de sakta 🌿\nDawai ka faisla — kaunsi, kitni, kab tak — sirf doctor karte hain, kyunki wo tumhari naak dekh kar aur purani report samajh kar faisla lete hain. Galat dawai faayde ki jagah nuksaan kar sakti hai.\nTum ye kar sakte ho:\n• 🩺 Doctors tab — tumhare 3 ENT doctors hain, naam ke paas wale number se seedha call lag jayegi\n• 📖 Guide tab — sinus aur spray ke sahi tareeke ki general jankari\n• Asal sawal-jawab ke liye Zara se WhatsApp par baat karo — wahan main sawal pehle puchh kar samjhati hun.' + flowNote);
+    await botSay('Dawai wala sawal samajh sakta hun — lekin iska jawab main nahi de sakta 🌿\nDawai ka faisla — kaunsi, kitni, kab tak — sirf doctor karte hain, kyunki wo tumhari naak dekh kar aur purani report samajh kar faisla lete hain. Galat dawai faayde ki jagah nuksaan kar sakti hai.\nTum ye kar sakte ho:\n• 🩺 Doctors tab — apna doctor jodo, naam ke paas wale number se seedha call lag jayegi\n• 📖 Guide tab — sinus aur spray ke sahi tareeke ki general jankari\n• Asal sawal-jawab ke liye Zara se WhatsApp par baat karo — wahan main sawal pehle puchh kar samjhati hun.' + flowNote);
     return;
   }
   if (MED_RX_RE.test(t) || MED_INFO_RE.test(t)) {
@@ -1222,7 +1196,7 @@ async function sendChatText() {
     return;
   }
   if (/(doctor|ent|hospital|clinic|appointment)/.test(t)) {
-    await botSay('Doctors ki list 🩺 Doctors tab me hai — 3 ENT doctors, number par tap karte hi call lag jayegi. Pehle Dr. Samresh Kashyap (Bikramganj) ko phone karke unka Bikramganj wala din confirm kar lena 🌿' + flowNote);
+    await botSay('Doctors ki list 🩺 Doctors tab me hai — wahan apne doctors jod sakte ho, number par tap karte hi call lag jayegi 🌿' + flowNote);
     return;
   }
   if (/(naak|band|sar dard|sardard|headache|sinus|zukam|cold|sardi|bukhaar|fever|neend|khaansi|khansi|gala)/.test(t)) {
