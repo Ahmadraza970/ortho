@@ -1,73 +1,73 @@
 <div align="center">
 
-<img src="og-image.png" alt="Ortho — Tumhara Health Saathi" width="720">
+<img src="og-image.png" alt="Ortho — Your Health Companion" width="720">
 
-# 🌿 Ortho — Tumhara Health Saathi
+# 🌿 Ortho — Your Health Companion
 
-**Roz ka sinus check-in, health record, AI se sawal-jawab, photo se dawai ki pehchan, ENT doctors aur sinus guide — ek saaf, shant app me.**
+**Daily sinus check-in, health records, AI answers, medicine identification from a photo, ENT doctors and a sinus guide — in one calm, clean app.**
 
 ![Live](https://img.shields.io/badge/Status-Live-0B6E4F?style=flat-square)
 ![Android APK](https://img.shields.io/badge/Android-APK%20download-3DDC84?style=flat-square)
 ![PWA](https://img.shields.io/badge/PWA-installable-0B6E4F?style=flat-square)
 ![Backend](https://img.shields.io/badge/Backend-Supabase-3ECF8E?style=flat-square)
 ![Hosting](https://img.shields.io/badge/Hosting-Vercel-000000?style=flat-square)
-![Language](https://img.shields.io/badge/UI-Roman%20Hinglish-F59E0B?style=flat-square)
+![Language](https://img.shields.io/badge/UI-English-F59E0B?style=flat-square)
 
 ### 🔗 Landing Page
 
 **📲 https://orthodoctorr.vercel.app/download.html**
 
-_Wahin se Android APK bhi mil jayega aur web version ka link bhi._
+_That is also where you get the Android APK and the link to the web version._
 
 </div>
 
-## Kya hai ye?
+## What is it?
 
-Ortho ek **personal health-assistant app (PWA + Android)** hai — allergic sinusitis ke roz ke check-in aur record ke liye shuru hua tha, ab ek **all-in-one health jaankari saathi** ban gaya hai. Phone par install hokar bilkul app ki tarah khulta hai — browser se bhi, Android APK se bhi.
+Ortho is a **personal health-assistant app (PWA + Android)** — started for the daily check-in and record of allergic sinusitis, and now an **all-in-one health information companion**. Install it on your phone and it opens just like an app — from the browser too, and from the Android APK.
 
-> ⚕️ **Seema (hamesha yaad rahe):** Ortho sirf **jankari aur record** ka saathi hai. Ye **pakka diagnosis nahi** karta aur **personal prescription (dawa ki salah) nahi** deta — wo hamesha doctor ka kaam hai.
+> ⚕️ **Limit (always remember):** Ortho is only a companion for **information and records**. It does **not** give a firm diagnosis and does **not** give personal prescriptions (medicine advice) — that is always the doctor's job.
 
 ## Features
 
-- 💬 **AI chat (asli dimag ke saath)** — koi bhi health sawal khul ke puchho: dawaiyon ki jaankari, aam beemariyan, gharelu upaye, surgery ki basics, kaun sa specialist kab, dental basics, sexual health aur periods ki sehatmand jaankari. Jawab saaf Roman Hinglish me. Chat history account me save rehti hai.
-- 📷 **Photo se dawai ki pehchan** — dawai ke packet/strip ki photo bhejo; app pehle **naam confirm** karwata hai, phir batata hai ki ye dawai kis kaam aati hai.
-- ✅ **Roz ka check-in** — chat se ya form se: neend, naak band (0–10), sar dard (0–10), padhai par asar, note. Chat aur form **ek hi din ke ek hi record** ko likhte hain; din me ek baar ho jaye to app baar-baar nahi satata.
-- 📈 **Record / pattern** — poori history, naak band + sar dard ka chart, average aur sabse kharab din. Har purana record **badla aur mitaya** ja sakta hai — kuch locked nahi.
-- 🩺 **Doctors** — ENT doctors ki list tap-to-call ke saath; apna doctor khud **add/edit/delete** bhi kar sakte ho.
-- 📖 **Sinus guide** — sinus ki banawat, allergy ka mechanism, spray ka sahi tareeka, doctor kya check karta hai, ilaaj ki seedhi (general jaankari) aur **khatre ke sanket (red flags)**.
-- 👍👎 **Har jawab par feedback** — AI ke har jawab ke neeche 👍/👎; feedback review karke app ko behtar banaya jata hai.
-- 👤 **Profile** — takleef ka summary; doctor ki di hui dawa ka naam/time aur apni note khud edit kar sakte ho.
-- 🔔 **Web Push** — roz subah ka pyaar bhara Hinglish reminder (function live hai; app me ek tap se ON).
-- 🔐 **Login** — **Google** se ya **email par aane wale 6-number code** se. Bina login ke bhi chat aur guide chalte hain; login karne par tumhara data tumhare account me surakshit save hota hai.
+- 💬 **AI chat (with a real brain)** — ask any health question openly: medicine information, common illnesses, home remedies, surgery basics, which specialist when, dental basics, sexual health and healthy information about periods. Answers come in the language you ask in — English in, English out; Hinglish in, Hinglish out. Chat history stays saved in your account.
+- 📷 **Medicine identification from a photo** — send a photo of a medicine packet/strip; the app first gets the **name confirmed** by you, then tells you what that medicine is for.
+- ✅ **Daily check-in** — from chat or from the form: sleep, blocked nose (0–10), headache (0–10), effect on study, note. Chat and form write to the **same single record for the same day**; once the day is done, the app does not keep nagging you.
+- 📈 **Records / patterns** — full history, a chart of blocked nose + headache, averages and worst days. Every old record can be **edited and deleted** — nothing is locked.
+- 🩺 **Doctors** — a list of ENT doctors with tap-to-call; you can **add/edit/delete** your own doctor too.
+- 📖 **Sinus guide** — how the sinuses are built, how allergy works, the right way to use a spray, what a doctor checks, the treatment ladder (general information) and **danger signs (red flags)**.
+- 👍👎 **Feedback on every answer** — 👍/👎 under every AI answer; feedback is reviewed to keep improving the app.
+- 👤 **Profile** — a summary of your troubles; the medicine name/time given by your doctor and your own note can be edited by you.
+- 🔔 **Web Push** — a gentle English reminder every morning (the function is live; turn it ON with one tap in the app).
+- 🔐 **Login** — with **Google** or with the **6-digit code that arrives by email**. Chat and guide work even without login; when you log in, your data is saved safely in your account.
 
 ## Privacy
 
-- Har user ka data **sirf usi ke account** me rehta hai — database par Row Level Security (RLS) lagi hai; koi user dusre ka record nahi dekh sakta.
-- Service-role key client code me kabhi nahi hoti; browser me sirf RLS-protected anon key jati hai. AI ki API key sirf server (Edge Function) par rehti hai.
-- Delete ka matlab asal delete — record mitaya to gaya.
+- Every user's data stays **only in that user's own account** — Row Level Security (RLS) is on the database; no user can see another user's records.
+- The service-role key is never in client code; only the RLS-protected anon key goes to the browser. The AI's API key stays only on the server (Edge Function).
+- Delete means real delete — a record that is deleted is gone.
 
 ## Tech
 
-| Hissa | Tech |
+| Part | Tech |
 |---|---|
-| Frontend | Static HTML/CSS/JS (koi framework nahi), PWA (manifest + service worker) |
+| Frontend | Static HTML/CSS/JS (no framework), PWA (manifest + service worker) |
 | Backend | Supabase — Postgres + Auth + Edge Functions |
 | AI | Supabase Edge Function → OpenRouter (free models — text + vision) |
-| Email | Custom SMTP (Zoho) — login code "Ortho" ke naam se jata hai |
-| Hosting | Vercel (GitHub `main` se auto-deploy) |
-| Android | TWA (Bubblewrap) — signed APK, web app hi app ke andar |
-| Push | Web Push (VAPID) — private key sirf Supabase secret me |
+| Email | Custom SMTP (Zoho) — login code arrives under the name "Ortho" |
+| Hosting | Vercel (auto-deploy from GitHub `main`) |
+| Android | TWA (Bubblewrap) — signed APK, the web app inside the app |
+| Push | Web Push (VAPID) — private key only in a Supabase secret |
 
-## Chalana / deploy karna
+## Running / deploying
 
-Backend provisioning aur deploy ke exact steps ke liye dekho:
+For the exact backend provisioning and deploy steps, see:
 **[`docs/PROVISION-RUNBOOK.md`](docs/PROVISION-RUNBOOK.md)**
 
 ## Honest limits
 
-- AI **free quota** par chalta hai (sab users milakar ~50 sawal/din) — quota khatm ho jaye to AI jawab kuch der ruk sakta hai; check-in, record, doctors aur guide hamesha chalte rehte hain.
-- Photo pehchan kabhi galat naam bhi padh sakti hai — isiliye app pehle **confirm** karwata hai, aur jaankari hamesha aam (general) hoti hai, personal salah nahi.
-- Google login filhaal testing mode me hai (sirf registered test users); email-code login sabke liye khula hai.
+- The AI runs on a **free quota** (~50 questions/day across all users) — if the quota runs out, AI answers may pause for a while; check-in, records, doctors and guide always keep working.
+- Photo identification can sometimes read a wrong name — that is why the app first gets it **confirmed** by you, and the information is always general, never personal advice.
+- Google sign-in is currently in testing mode (registered test users only); email-code login is open to everyone.
 
 ---
 
